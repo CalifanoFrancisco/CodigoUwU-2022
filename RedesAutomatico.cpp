@@ -2,16 +2,17 @@
 #include <string>
 #include <vector>
 #include <stdlib.h> //system("CLS");
+#define add(x) push_back(x)
 using namespace std;
 
 //{}
 
 void sayDireccion(int direccion[4]){
     for(int i=0;i<4;i++){
-        cout<<direccion[i];
-        if(i<3){    cout<<".";  }
+        std::cout<<direccion[i];
+        if(i<3){    std::cout<<".";  }
     }
-    cout<<endl;
+    std::cout<<std::endl;
 }
 
 bool esPar(int n){
@@ -162,6 +163,49 @@ void sayData(int direccion[4],bool direccionBinaria[32],int submascara,bool subm
 
 }
 
+struct redData{
+    std::string nombre;
+    int n_hosts;
+    int n_hosts_total;
+};
+
+int hostsGiven(int num){
+    int out=4;
+    while(num>out){
+        out*=2;
+    }
+    return out;
+}
+
+void addRed(std::vector<redData> &redes){
+    redData RD;
+    cout<<"Nombre red: ";
+    cin>>RD.nombre;
+    cout<<"Cantidad hosts: ";
+    cin>>RD.n_hosts;
+    RD.n_hosts_total=hostsGiven(RD.n_hosts);
+    cout<<"Hosts otorgados: "<<RD.n_hosts_total<<endl;
+    redes.add(RD);
+}
+
+void sayAllRed(std::vector<redData> redes){
+    for(int i=0;i<redes.size();i++){
+        cout<<"Nombre:"<<redes[i].nombre<<" | Hosts:"<<redes[i].n_hosts<<" | Otorgados:"<<redes[i].n_hosts_total<<endl;
+    }
+}
+
+int menu(){
+    int userInput;
+    cout<<endl;
+    cout<<"1 - Anadir red."<<endl;
+    cout<<"2 - Redes actuales"<<endl;
+    cout<<"3 - Direccion red"<<endl;
+    cout<<"6 - Salir."<<endl;
+    cout<<"7 - CLS"<<endl;
+    cout<<"@";
+    cin>>userInput;
+    return userInput;
+}
 
 int main(){
     //32 bits 8-8-8-8
@@ -169,6 +213,7 @@ int main(){
     bool submascaraBinaria[32];
     int  submascara=0;
     int  direccion[]={0,0,0,0};
+    std::vector<redData> redes;
 
     fillDireccion(direccion);
     fillMascara  (submascara);
@@ -177,7 +222,18 @@ int main(){
 
     cls();
 
-    sayData(direccion,direccionBinaria,submascara,submascaraBinaria);
+    bool men=true;
+    while(men){
+        switch(menu()){
+            case 1: addRed(redes); break;
+            case 2: sayAllRed(redes);     break;
+            case 3: sayData(direccion,direccionBinaria,submascara,submascaraBinaria); break;
+            case 6: men=false; break;
+            case 7: cls(); break;
+            default: cout<<"invalid option"<<endl; break;
+        }
+    }
+
 
     return 0;
 }
