@@ -29,16 +29,8 @@ public class ServidorMultiClientes {
                 public void run() {
                     try (
                         PrintWriter escritor = new PrintWriter(socketCliente.getOutputStream(),true);
-                    ) {
-                            /*int juan = LocalTime.now().getSecond();
-                            LocalTime Leto_prueba = LocalTime.now();
-                            Leto_prueba.minusNanos(1);*/
-                            
+                    ) {        
                             while(true){
-                                /*if (Leto_prueba.getSecond() != LocalTime.now().getSecond()) {
-                                    escritor.println(localtimeToString(LocalTime.now()));
-                                }*/
-                                
                                 if(LocalTime.now().getSecond() != time.getSecond()){
                                     escritor.println(localtimeToString(LocalTime.now()));
                                     time = LocalTime.now();
@@ -47,11 +39,6 @@ public class ServidorMultiClientes {
                         
                     } catch (IOException e) { 
                         println("Error: " + e.getMessage());
-                        /*try {
-                            socketCliente.close();
-                        } catch (IOException u) {
-                            println(e.getMessage());
-                        }*/
                     }
                 }
             };
