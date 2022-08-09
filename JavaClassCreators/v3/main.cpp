@@ -11,9 +11,9 @@ string extensionArchivo = ".txt";
 
 
 struct Variable {
-    string dataType;
-    string dataName;
-    string totalDeclaration="";
+    std::string dataType = "" ;
+    std::string dataName = "" ;
+    std::string totalDeclaration = "" ;
 };
 
 struct DataTypesInfo{
@@ -23,28 +23,26 @@ struct DataTypesInfo{
 };
 
 class Clase{
-//private:
 public:
     std::vector<Variable> variables;
     std::string nombre;
-    std::string herencia = "";
+    std::string herencia = "" ;
     std::vector<string> imports;
-//public:
+    
     void addVariable(Variable    _var){
         this->variables.push_back(_var);
     }
+    
     void addVariable(string _dataType,string _dataName){
         Variable var;
         var.dataName = _dataName;
         var.dataType = _dataType;
         this->variables.push_back(var);
     }
-    void setHerencia(string _herencia){
-        this->herencia = _herencia;
-    }
-    void setNombre  (string _nombre){
-        this->nombre = _nombre;
-    }
+    
+    void setHerencia(string _herencia){ this->herencia = _herencia; }    
+    void setNombre  (string _nombre  ){ this->nombre   = _nombre;   }
+    
     void addImport  (string _import){
         int e=0;
         for(int i=0;i<imports.size();i++){
@@ -56,9 +54,10 @@ public:
     }
 
 };
+
 std::vector<Clase> clases;
 
-std::vector<DataTypesInfo> inicializadores(){
+std::vector<DataTypesInfo> inicializadores(){   //no lo uso lol
 
     std::vector<DataTypesInfo> out;
     DataTypesInfo aux;
@@ -246,7 +245,7 @@ Clase buildClase(){
         cout<<aux.totalDeclaration<<endl;
         clase.addVariable(aux);
     }
-
+    clases.push_back(clase);
 }
 
 bool menu(){
