@@ -8,8 +8,6 @@ using namespace std;
 string extensionArchivo = ".txt";
 // ''
 
-
-
 struct Variable {
     std::string dataType = "" ;
     std::string dataName = "" ;
@@ -28,21 +26,22 @@ public:
     std::string nombre;
     std::string herencia = "" ;
     std::vector<string> imports;
-    
+    std::vector<string> metodos;
+
     void addVariable(Variable    _var){
         this->variables.push_back(_var);
     }
-    
+    void addMetodos(string _metodo){
+        this->metodos.push_back(_metodo);
+    }
+
     void addVariable(string _dataType,string _dataName){
         Variable var;
         var.dataName = _dataName;
         var.dataType = _dataType;
         this->variables.push_back(var);
     }
-    
-    void setHerencia(string _herencia){ this->herencia = _herencia; }    
-    void setNombre  (string _nombre  ){ this->nombre   = _nombre;   }
-    
+
     void addImport  (string _import){
         int e=0;
         for(int i=0;i<imports.size();i++){
@@ -50,6 +49,13 @@ public:
         }
         if(e==imports.size()){
             this->imports.push_back(_import);
+        }
+    }
+    void sayAllDeclarations(){
+        for(int i=0;i<imports.size();i++){    cout<<imports[i]<<endl;   }
+
+        for(int i=0;i<variables.size();i++){
+            cout<<variables[i].totalDeclaration<<endl;
         }
     }
 
@@ -110,10 +116,63 @@ int userInputInt(){
 
 void writeFile(Clase clase){
     ofstream file(clase.nombre+extensionArchivo);
-    //Imports
-    //public class <name> {
-    //atributos
-    //metodos
+
+    /*ofstream file;
+    file.open(clase.nombre+extensionArchivo);*/
+    string sangria = "      " ;
+//Imports
+    for(int i=0;i<clase.imports.size();i++){
+        file << clase.imports[i] << ";" << endl;
+    }
+    file << endl << endl;
+//
+    file << "public class " + clase.nombre + " {" << endl;
+//atributos
+    for(int i=0;i<clase.variables.size();i++){
+        file << sangria <<"private" <<clase.variables[i].dataType << " " << clase.variables[i].dataName << ";" <<endl;
+    }
+//constructores
+    //default
+    file << sangria << "public " << clase.nombre << "() {"<<endl;
+    for(int i=0;i<clase.variables.size();i++){
+        file << sangria << sangria << "this." << clase.variables[i].totalDeclaration << endl;
+    }
+    file << sangria << "}" << endl << endl;
+    //por parametros
+    file << sangria << "public " << clase.nombre << "(";
+    for(int i=0;i<clase.variables.size();i++){
+        file << clase.variables[i].dataType << " " << clase.variables[i].dataName;
+        if(i<clase.variables.size()){     file << ",";    }
+    }
+    file << ") {" <<endl;
+    for(int i=0;i<clase.variables.size();i++){
+        file << sangria << sangria << "this." << clase.variables[i].dataName << " = " <<clase.variables[i].dataName << ";" << endl;
+    }
+    file << sangria << "}" << endl << endl;
+//setters
+    for(int i=0;i<clase.variables.size();i++){
+        file << sangria;
+        file << "public " << "void"                      << " set" << clase.variables[i].dataName;
+        file << "("       << clase.variables[i].dataType << " i){"   ;
+        file << " this."  << clase.variables[i].dataName << " = i; ";
+        file << "}"       << endl;
+    }
+    file << endl;
+//getters
+    for(int i=0;i<clase.variables.size();i++){
+        file << sangria;
+        file << "public " << clase.variables[i].dataType << " get" << clase.variables[i].dataName << "(){";
+        file << " return this." << clase.variables[i].dataName<< ";";
+        file << " }" << endl;
+    }
+    file << endl;
+//metodos
+    for(int i=0;i<clase.metodos.size();i++){
+        file << clase.metodos[i] << endl;
+    }
+    file << "}" << endl;
+    file.close();
+    println("Clase " + clase.nombre + " creada exitosamente :3");
 }
 
 /*std::string checkIsInVector(string in){
@@ -125,6 +184,22 @@ void writeFile(Clase clase){
     }
 }*/
 
+void addInputs(Clase&clase){
+    std::vector<std::string> out;
+    clase.addImport("import java.util.Scanner;");
+    clase.addMetodos("private static int    inputInt()    { return new Scanner(System.in).nextInt();    }");
+    clase.addMetodos("private static String inputString() { return new Scanner(System.in).nextLine();   }");
+    clase.addMetodos("private static float  inputFloat()  { return new Scanner(System.in).nextFloat();  }");
+    clase.addMetodos("private static double inputDouble() { return new Scanner(System.in).nextDouble(); }");
+}
+
+void addEasyPrints(Clase&clase){
+    clase.addMetodos("private static void println   (String i){ System.out.println(i); }");
+    clase.addMetodos("private static void printlnErr(String i){ System.err.println(i); }");
+    clase.addMetodos("private static void printErr  (String i){ System.err.print(i);   }");
+    clase.addMetodos("private static void print     (String i){ System.out.print(i);   }");
+}
+
 void println(string i){ cout<<i<<endl;  }
 
 Clase buildClase(){
@@ -133,14 +208,16 @@ Clase buildClase(){
     clase.nombre = userInputString();
     println("Herencia? S/N");
     string temp = userInputString();
-    if(temp=="S"||temp=="s"||temp=="Y"||temp=="y"){
+    if(temp=="S" || temp=="s" || temp=="Y" || temp=="y"){
         println("Inserte nombre de la herencia: ");
         clase.herencia = userInputString();
     }
 
-    println("Atributos,esciba ready para finalizar, toque cualquier tecla ");
+    //println("Atributos,esciba ready para finalizar, toque cualquier tecla ");
 
-    while(userInputString()!="ready"){
+    bool loop = true;
+
+    while(loop){
         Variable aux;
         bool complexDataType = false;
         println("Tipo de dato: ");
@@ -161,7 +238,7 @@ Clase buildClase(){
                 aux.dataName + " = " +
                 "new Hashmap<>();"
             ;
-            clase.addImport("import java.util."+aux.dataName);
+            clase.addImport("import java.util."+aux.dataType);
             complexDataType = true;
         }
         if(aux.dataType=="HashSet"  ){
@@ -176,7 +253,7 @@ Clase buildClase(){
                 aux.dataName + " = " +
                 "new HashSet<>();"
             ;
-            clase.addImport("import java.util."+aux.dataName);
+            clase.addImport("import java.util."+aux.dataType);
             complexDataType = true;
         }
         if(aux.dataType=="ArrayList"){
@@ -191,7 +268,7 @@ Clase buildClase(){
                 aux.dataName + " = " +
                 "new ArrayList<>();"
             ;
-            clase.addImport("import java.util."+aux.dataName);
+            clase.addImport("import java.util."+aux.dataType);
             complexDataType = true;
         }
         if(aux.dataType=="LocalTime"||aux.dataType=="LocalDate"||aux.dataType=="LocalDateTime"){
@@ -203,18 +280,18 @@ Clase buildClase(){
                 aux.dataType +
                 ".now();"
             ;
-            clase.addImport("import java.time."+aux.dataName);
+            clase.addImport("import java.time."+aux.dataType);
             complexDataType = true;
         }
 
-        if(!complexDataType){
+        if(!complexDataType && aux.dataType!="ready"){
             println("Nombre del dato: ");
             aux.dataName = userInputString();
             aux.totalDeclaration =
                 aux.dataType +  " "  +
                 aux.dataName + " = "
             ;
-            if(aux.dataType=="String"){
+            if(aux.dataType=="String"/*||aux.dataType=="string"*/){
                 //string comillas = int(string 34);
                 //aux.totalDeclaration+=comillas;
                 aux.totalDeclaration+="\"";
@@ -239,31 +316,49 @@ Clase buildClase(){
                 aux.totalDeclaration+="();";
             }
         }
+        if(aux.dataType=="ready"){
+            println("saliendo del loop");
+            //println("sos re tonto.");
+            loop = false;
+        }else{
+            clase.addVariable(aux);
+        }
 
 
-
-        cout<<aux.totalDeclaration<<endl;
-        clase.addVariable(aux);
+        clase.sayAllDeclarations();
     }
-    clases.push_back(clase);
-}
-
-bool menu(){
-    println("1. Crear nueva clase");
-    println("2. Fabricar clase(s)");
-    println("3. Salir");
-    switch(userInputInt()){
-        case 1: buildClase(); break;
-        case 2:  break;
-        case 3: return false; break;
-        default: println("Valor invalido boludito"); break;
-    }
-    return true;
+    //clases.push_back(clase);
+    return clase;
 }
 
 int main(){
-  //Falta lo que escribe el archivo!!!
-    while(menu()){}
+    while(true){
+        println("1. Crear nueva clase");
+        println("2. Fabricar clase(s)");
+        println("3. Salir");
+        switch(userInputInt()){
+            case 1:
+                clases.push_back(buildClase());
+                break;
+            case 2:
+                for(int i=0;i<clases.size();i++){
+                    writeFile(clases[i]);
+                }
+                break;
+            case 3:
+                return 0;
+                break;
+            default:
+                println("Valor invalido boludito");
+                break;
+        }
+    }
 
-    return 0;
+
+    return true;
 }
+
+
+//arreglar imports de estructuras complejas
+//falta ; en inserts
+
