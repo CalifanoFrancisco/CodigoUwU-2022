@@ -5,7 +5,13 @@
 
 using namespace std;
 
-string extensionArchivo = ".txt";
+//Java Automatic Class Kreator
+
+//addMetodos anda pero lo toma como un tipo de variable asi q mal :(
+//tipo los añade bien + los imports
+//pero cuando hace los getters/setters/constructores lo toma como dato aunque este vacio :c
+
+string extensionArchivo = ".java";
 // ''
 void println(string i){ cout<<i<<endl;  }
 
@@ -140,7 +146,18 @@ void writeFile(Clase clase){
     file << sangria << "public " << clase.nombre << "() {"  << endl;
     if(clase.herencia!=""){ file << sangria      << sangria << "super();" << endl; }
     for(int i=0;i<clase.variables.size();i++){
-        file << sangria << sangria << "this." << clase.variables[i].totalDeclaration << endl;
+        file << sangria << sangria << "this.";
+        /*int aux = 0;
+        for(int e=0;e<clase.variables[i].dataType.size();e++){
+            if(clase.variables[i].dataType[e]     == clase.variables[i].totalDeclaration[e]){ aux++; }
+            if(clase.variables[i].dataType.size() == aux){
+                
+            }
+        }*/
+        for(int e = clase.variables[i].dataType.size()+1; e<clase.variables[i].totalDeclaration.size(); e++){
+            file << clase.variables[i].totalDeclaration[e];
+        }
+        file << endl;
     }
     file << sangria << "}" << endl << endl;
     //por parametros
@@ -158,7 +175,17 @@ void writeFile(Clase clase){
 //setters
     for(int i=0;i<clase.variables.size();i++){
         file << sangria;
-        file << "public " << "void"                      << " set" << clase.variables[i].dataName;
+        file << "public " << "void" << " set";
+        //clase.variables[i].dataName;
+        if(islower(clase.variables[i].dataName[0])){
+            string aux=" ";
+            aux = int(clase.variables[i].dataName[0])-32;
+            file << aux;
+        }
+        for(int e=1;e<clase.variables[i].dataName.size();e++){
+            file << clase.variables[i].dataName[e];
+        }
+
         file << "("       << clase.variables[i].dataType << " i){"   ;
         file << " this."  << clase.variables[i].dataName << " = i; ";
         file << "}"       << endl;
@@ -167,8 +194,17 @@ void writeFile(Clase clase){
 //getters
     for(int i=0;i<clase.variables.size();i++){
         file << sangria;
-        file << "public " << clase.variables[i].dataType << " get" << clase.variables[i].dataName << "(){";
-        file << " return this." << clase.variables[i].dataName<< ";";
+        file << "public " << clase.variables[i].dataType << " get";
+        // << clase.variables[i].dataName << "(){";
+        if(islower(clase.variables[i].dataName[0])){
+            string aux=" ";
+            aux = int(clase.variables[i].dataName[0])-32;
+            file << aux;
+        }
+        for(int e=1;e<clase.variables[i].dataName.size();e++){
+            file << clase.variables[i].dataName[e];
+        }
+        file << "(){ return this." << clase.variables[i].dataName<< ";";
         file << " }" << endl;
     }
     file << endl;
@@ -206,6 +242,9 @@ void addEasyPrints(Clase&clase){
     clase.addMetodos("private static void print     (String i){ System.out.print(i);   }");
 }
 
+void addCrash(Clase&clase){
+    clase.addMetodos("private static void crash(String errMsg){ System.out.println(errMsg); int e = 1/0;}");
+}
 
 Clase buildClase(){
     Clase clase;
@@ -242,7 +281,7 @@ Clase buildClase(){
             aux.totalDeclaration=
                 aux.dataType +  " "  +
                 aux.dataName + " = " +
-                "new Hashmap<>();"
+                "new HashMap<>();"
             ;
             complexDataType = true;
         }
@@ -288,6 +327,9 @@ Clase buildClase(){
             ;
             complexDataType = true;
         }
+        if(aux.dataType=="addInput"){   addInputs(clase);     complexDataType=true;  }
+        if(aux.dataType=="addPrints"){  addEasyPrints(clase); complexDataType=true;  }
+        if(aux.dataType=="addCrash"){   addCrash(clase);      complexDataType=true;  }
 
         if(!complexDataType && aux.dataType!="ready"){
             println("Nombre del dato: ");
@@ -310,22 +352,28 @@ Clase buildClase(){
                aux.dataType == "int"     ||
                aux.dataType == "integer" ||
                aux.dataType == "Float"   ||
-               aux.dataType == "float"
+               aux.dataType == "float"   ||
+               aux.dataType == "Integer"
             ){
                 println("Dato default(numero): ");
-                aux.totalDeclaration+=userInputInt();
-                aux.totalDeclaration+=";";
+                aux.totalDeclaration += to_string(userInputInt());
+                aux.totalDeclaration += ";";
             }else{
                 aux.totalDeclaration+="new ";
                 aux.totalDeclaration+=aux.dataType;
                 aux.totalDeclaration+="();";
             }
         }
+
         if(aux.dataType=="ready"){
             println("saliendo del loop");
-            //println("sos re tonto.");
+            //println("sos re tonto."); //cortesia de malitto
             loop = false;
-        }else{
+        }else if(
+            aux.dataType!="addInput" ||
+            aux.dataType!="addPrints"||
+            aux.dataType!="addCrash"
+        ){
             clase.addVariable(aux);
         }
 
@@ -337,6 +385,17 @@ Clase buildClase(){
 }
 
 int main(){
+    /*
+    string input="",out="";
+    cin>>input;
+    for(int i=0;i<input.size();i++){
+        if(islower(input[i])){
+            input[i]=int(input[i])-32;
+        }
+        out+=input[i];
+    }
+    */
+    cout <<out<<endl;
     while(true){
         println("1. Crear nueva clase");
         println("2. Fabricar clase(s)");
