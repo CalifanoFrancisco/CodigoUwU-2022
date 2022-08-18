@@ -38,18 +38,18 @@ public:
     void addVariable(Variable    _var){
         this->variables.push_back(_var);
     }
-    void addMetodos(string _metodo){
+    void addMetodos(std::string _metodo){
         this->metodos.push_back(_metodo);
     }
-
-    void addVariable(string _dataType,string _dataName){
+    
+    void addVariable(std::string _dataType,std::string _dataName){    // No lo uso lol
         Variable var;
         var.dataName = _dataName;
         var.dataType = _dataType;
         this->variables.push_back(var);
     }
 
-    void addImport  (string _import){
+    void addImport  (std::string _import){
         int e=0;
         for(int i=0;i<imports.size();i++){
             if(imports[i]!=_import){ e++; }
