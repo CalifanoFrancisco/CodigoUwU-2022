@@ -385,17 +385,6 @@ Clase buildClase(){
 }
 
 int main(){
-    /*
-    string input="",out="";
-    cin>>input;
-    for(int i=0;i<input.size();i++){
-        if(islower(input[i])){
-            input[i]=int(input[i])-32;
-        }
-        out+=input[i];
-    }
-    */
-    cout <<out<<endl;
     while(true){
         println("1. Crear nueva clase");
         println("2. Fabricar clase(s)");
@@ -417,9 +406,7 @@ int main(){
                 break;
         }
     }
-
-
-    return true;
+    return 0;
 }
 
 
