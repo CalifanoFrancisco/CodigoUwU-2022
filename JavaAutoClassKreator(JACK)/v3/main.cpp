@@ -432,7 +432,9 @@ int main(){
                 for(int i=0;i<clases.size();i++){
                     writeFile(clases[i]);
                 }
-                clases.clear();
+                clases.clear(); 
+                //asi no reescribe archivos ya escritas
+                //chequear si ese es el comando para vaciar vectores pq sino no anda :(
                 break;
             case 3:
                 return 0;
