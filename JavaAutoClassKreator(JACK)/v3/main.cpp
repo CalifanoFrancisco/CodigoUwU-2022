@@ -432,6 +432,7 @@ int main(){
                 for(int i=0;i<clases.size();i++){
                     writeFile(clases[i]);
                 }
+                clases.clear();
                 break;
             case 3:
                 return 0;
@@ -443,6 +444,3 @@ int main(){
     }
     return 0;
 }
-
-
-//arreglar inputs de numeros :/
