@@ -130,8 +130,10 @@ private:
         std::fstream file(this->fileName);
         if(file){
             println(std::string(fileName + " already exists."));
+            file.close();
             return true;
         }
+        file.close();
         return false;
     }
     void setFileName (){
@@ -142,11 +144,12 @@ public:
 //Setters
     void setName     (std::string x){ 
         this->name = x; 
-        this->fileName = this->name + this->extension;
+        this->setFileName();
+
     }
     void setExtension(std::string x){
         this->extension = x;
-        this->fileName = this->name + this->extension;
+        this->setFileName();
     }
     void setFileName (std::string x){
         this->fileName = x;
@@ -156,61 +159,117 @@ public:
         //Checks
         if(!isOpenable()) return false;
         if(exists())      return false;
-
+        //Creation
         std::ofstream file(this->fileName);
-
-        file.close();
         //Succesful creation
         println(std::string(this->fileName + " created succesfully"));
+        file.close();
         return true;
     }
     void buildClass();
+    void buildDataTypesFile(){  //INcompleto -- hay q terminar insertsIntoCategory()
+        File file;
+        file.setFileName("dataTypes.txt");
+        file.buildNewFile();
+        //Primitives
+        file.writeln("#PRIMITIVE");
+        file.writeln("#END_PRIMITIVE");
+        //Generics
+        file.writeln("#GENERIC");
+        file.writeln("#END_GENERIC");
+        //Other
+        file.writeln("#OTHER");
+        file.writeln("#END_OTHER");
+        //Objects
+        file.writeln("#OBJECT");
+        file.writeln("#END_OBJECT");
+    }
+//Finders
+    bool isHere(std::string x){
+        std::fstream file(this->fileName);
+        std::string word = "";
+        while(file >> word){
+            if(word == x){
+                file.close();
+                return true;
+            }
+        }
+        file.close();
+        return false;
+    }
 //Readers
     std::string read(){
         std::ifstream file(this->fileName);
-        std::string word = "";
-        while (file >> word){
-            // displaying content
-            std::cout << word << std::endl;
-        }
+        std::string word = "",out = "";
+        while (file >> word) out += word + " ";
+        file.close();
         return "";
     }
-    void readFromUntil(std::string a,std::string b){
+    bool readFromUntil(std::string a,std::string b){
+        //Checks
+        if(!isHere(a)){ println(std::string(a + " not found")); return false; }
+        if(!isHere(b)){ println(std::string(b + " not found")); return false; }
+
         std::ifstream file(this->fileName);
         std::string word;
         bool sno = false;
         while(file >> word){
-            if(word == a) sno = true;
+            if(word == a) sno = true; 
             if(sno)       println(word);
             if(word == b) sno = false;
         }
+        file.close();
+        return true;
     }
-    void readBetween(std::string a,std::string b){ //NO ANDA !!! >:(
+    bool readBetween(std::string a,std::string b){
+        //Checks
+        if(!this->exists()) return false;
+        if(!isHere(a)){ println(std::string(a + " not found")); return false; }
+        if(!isHere(b)){ println(std::string(b + " not found")); return false; }
+        //Builds file
         std::ifstream file(this->fileName);
         std::string word;
+        //Reads
         bool sno = false;
         while(file >> word){
-            if(word == a) file >> word; sno = true;
-            if(sno)       println(word);
-            if(word == b) sno = false;
+            if(word == a){  file >> word; sno = true;   }
+            if(word == b){  file >> word; sno = false;  }
+            if(sno)         println(word);
         }
+        file.close();
+        return true;
     }
 //Writers
-    void write(std::string x){
+    void writeln(std::string x){
         std::ofstream file(this->fileName);
         file << x << std::endl;
+        file.close();
     }
     void write(std::vector<std::string> x){
         std::ofstream file(this->fileName);
         for (int i = 0; i < x.size(); i++){
             file << x[i] << std::endl;
         }
+        file.close();
     }
 //Adders for external help files 
-    void addDataStructure();
-    void addVariableType();
+    bool insertIntoCategory(std::string where, std::string x){  //INcompleto
+        //File
+        std::ofstream file(this->fileName);
+        //Checks
+        if(this->fileName != "dataTypes.txt") return false;
+        if (!isHere(where)){ println(std::string(where + " is not in this file")); return false; }
+        //Adds x to file after "where" is
+
+        //Closers
+        file.close();
+        return true;
+    };
+    void addPrimitive();
+    void addOther();
+    void addObject();
 //Class wirter
-    bool writeClass(Class c){
+    bool writeClass(Class c){   //TODO
     //Building file
         this->fileName  = c.getName();
         this->extension = ".java";
@@ -223,7 +282,17 @@ public:
         //Main structure
         file << "public class" << c.getName();
         if(c.isInheritance()) file << " extends " << c.getInheritance() << " {" << std::endl;
-        
+        //Variables
+        for(int i = 0; i < c.getVariables().size(); i++){
+            Variable aux = c.getVariables()[i];
+            file << aux.type << " " << aux.name << " = " << aux.def << std::endl;
+        }
+        //Setters
+        for(int i = 0; i < c.getVariables().size(); i++){
+            //file << "public void set" << 
+        }
+        //Getters
+        //Methods
     //Success
         file.close();
         println("Class built succesfully");
@@ -231,10 +300,15 @@ public:
     };
 };
 
+//Crear clase padre FILE y clases hijo JavaFile y helpFiles
+//class JavaFile : private File {}  //Sintaxis
+
+//struct Variable adentro de Class
+
 int main(){
     File file;
     file.setFileName("dataTypes.txt");
-    file.readFromUntil("Generic{","}");
-    //file.readBetween("Primitive{","}");
+    //file.readFromUntil("#GENERIC","#END_GENERIC");
+    file.readBetween("#GENERIC","#END_GENERIC");
     return 0;
 }
