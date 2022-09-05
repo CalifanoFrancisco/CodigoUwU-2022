@@ -12,52 +12,83 @@
 #endif
 
 template <typename T> class HashSet {
-    private:
-        std::vector<T> data;
-    public:
-    //Constructors
-        HashSet(){};
-        HashSet(std::vector<T> x) {
-            for (int i = 0; i < x.size(); i++) this->data.add(x[i]);
+private:
+    T         dato;
+    HashSet<T>*next;
+    HashSet<T>*head = NULL;
+    bool isHere(T e){
+        HashSet<T>*current = head;
+        while (current != NULL) {
+            if (current->dato == e) return true;
+            current = current->next;
         }
-    //Methods
-        void add   (T   x) {
-            if (!isHere(x)) this->data.push_back(x);
+        return false;
+    }
+    bool inBounds(int i){
+        if (i < 0 || i > this->size()) return false;
+        return true;
+    }
+public:
+    void add(T x){
+        if(isHere(x)) return;
+
+        HashSet<T>*newNode = new HashSet<T>;
+        newNode->dato = x;
+        newNode->next = NULL;
+
+        if(head == NULL){
+            head = newNode;
+            return;
         }
-        void remove(int i) {
-            if(i <= this->data.size()) this->data.erase(this->data.begin()+i);
-        }
-        int  find  (T   x) {
-            if (!isHere(x)) println(std::string(x + " not found")); return -1;
-            for (int i = 0; i < this->data.size(); i++){
-                if (this->data[i] == x) return i;
+
+        HashSet<T>*current = head;
+        while (current != NULL) {
+            if (current->next == NULL) {
+                current->next = newNode;
+                return;
             }
+            current = current->next;
         }
-        bool isHere(T   x) {
-            for (int i = 0; i < this->data.size(); i++){
-                if (this->data[i] == x){
-                    return true;
-                } 
+    }
+    T    operator[](int index){
+        if (index > size() || index < 0) return T();
+        HashSet<T>*current = head;
+        for(int i = 0;i < index; i++) current = current->next;
+        return current->dato;
+    }
+    bool operator==(HashSet e){
+        
+        if (!inBounds(e.size())) return false;
+
+        HashSet<T>*current = head;
+        for (int i = 0; current != NULL; i++){
+            if (current->dato != e[i]) return false;
+            current = current->next;
+        }
+        return true;
+    }
+    int  size(){
+        HashSet<T>*current = head;
+        int i = 0;
+        for (; current != NULL; i++) current = current->next;
+        return i;
+    }
+    void remove(int index){
+
+        if (!inBounds(index)) return;
+
+        HashSet<T>*current = head;
+        HashSet<T>*before  = NULL;
+        for(int i = 0; current != NULL; i++){
+            if (index == i){
+                before->next = current->next;
+                delete current;
+                return;
             }
-            return false;
+            before  = current;
+            current = current->next;
         }
-        void sayAll() {
-            for (int i = 0; i < this->data.size();i++) std::cout << this->data[i] << " ";
-            std::cout << std::endl;
-        }
-        int  size  () {
-            return this->data.size();
-        };
-        std::vector<T> getData(){
-            return this->data;
-        };
-    //Operators
-        T    operator[](int i){
-            return this->data[i];
-        }
-        bool operator==(HashSet<T> x){
-            return (this->data == x.data) ? true : false;
-        }
+    } 
 };
 
 template <typename T> T userInput() {
@@ -66,23 +97,24 @@ template <typename T> T userInput() {
     return var;
 };
 
-class Variable {
-    public:
-        std::string name = "";
-        std::string type = "";
-        std::string def  = "";
-        bool operator==(Variable x){
-            return (name == x.name) ? ((type == x.type) ? ((def == x.def) ? true : false) : false) : false;
-        }
-};
-
 class Class {
     private:
+    
+        class Variable {
+        public:
+            std::string name = "";
+            std::string type = "";
+            std::string def  = "";
+            bool operator==(Variable x){
+                return (name == x.name) ? ((type == x.type) ? ((def == x.def) ? true : false) : false) : false;
+            }
+        };
         std::string          name;
         HashSet<Variable>    variables;
         HashSet<std::string> imports;
         HashSet<std::string> methods;
         std::string          inheritance;
+
 
     public:
     //Setters & Adders
@@ -115,10 +147,10 @@ class Class {
 
 class File {
 private: 
-    std::string name = "";
-    std::string extension = ".txt";
-    std::string fileName = "";
-
+    std::string name      = "";
+    std::string extension = "";
+    std::string fileName  = "";
+public:
     bool isOpenable(){
         if((this->name != "" && this->extension != "") || this->fileName != ""){
             return true;
@@ -139,8 +171,7 @@ private:
     void setFileName (){
         this->fileName = this->name + this->extension;
     }
-public:
-//--------------------- TODO ---------------------//
+//public:
 //Setters
     void setName     (std::string x){ 
         this->name = x; 
@@ -158,31 +189,13 @@ public:
     bool buildNewFile(){
         //Checks
         if(!isOpenable()) return false;
-        if(exists())      return false;
+        //if(exists())      return false;
         //Creation
         std::ofstream file(this->fileName);
         //Succesful creation
         println(std::string(this->fileName + " created succesfully"));
         file.close();
         return true;
-    }
-    void buildClass();
-    void buildDataTypesFile(){  //INcompleto -- hay q terminar insertsIntoCategory()
-        File file;
-        file.setFileName("dataTypes.txt");
-        file.buildNewFile();
-        //Primitives
-        file.writeln("#PRIMITIVE");
-        file.writeln("#END_PRIMITIVE");
-        //Generics
-        file.writeln("#GENERIC");
-        file.writeln("#END_GENERIC");
-        //Other
-        file.writeln("#OTHER");
-        file.writeln("#END_OTHER");
-        //Objects
-        file.writeln("#OBJECT");
-        file.writeln("#END_OBJECT");
     }
 //Finders
     bool isHere(std::string x){
@@ -245,59 +258,89 @@ public:
         file << x << std::endl;
         file.close();
     }
-    void write(std::vector<std::string> x){
+    void writeln(std::vector<std::string> x){
         std::ofstream file(this->fileName);
         for (int i = 0; i < x.size(); i++){
             file << x[i] << std::endl;
         }
         file.close();
     }
-//Adders for external help files 
-    bool insertIntoCategory(std::string where, std::string x){  //INcompleto
-        //File
-        std::ofstream file(this->fileName);
-        //Checks
-        if(this->fileName != "dataTypes.txt") return false;
-        if (!isHere(where)){ println(std::string(where + " is not in this file")); return false; }
-        //Adds x to file after "where" is
+};
 
-        //Closers
-        file.close();
-        return true;
-    };
-    void addPrimitive();
-    void addOther();
-    void addObject();
-//Class wirter
-    bool writeClass(Class c){   //TODO
-    //Building file
-        this->fileName  = c.getName();
-        this->extension = ".java";
-        this->setFileName();
-        std::ofstream file(this->fileName);
-    //Builder
-        //Imports
-        for (int i = 0; i < c.getImports().size(); i++) file << c.getImports()[i] << ";" << std::endl;
+class JavaFile : public File {
+private:
+    std::string fltu(std::string input){ //First Letter To Uppercase
+        if(islower(input[0])) input[0] -= 32;
+        return input;
+    }
+public:
+    void buildClass(Class c){
+
+        std::string space = "    ";
+
+        this->setName(c.getName());
+        this->setExtension(".java");
+    //If class already exists asks if it has to be overwritten
+        if(this->exists()){     
+            println("Class " + c.getName() + " already exists. Overwrite Y/N");
+            std::string x = userInput<std::string>();
+            if (x == "N" || x == "n") return;
+        }
+    //Creates and opens new file
+        buildNewFile();
+        std::ofstream file(c.getName() + ".java");
+    //Adds imports
+        for (int i = 0; i < c.getImports().size(); i++) file << c.getImports()[i] << std::endl; file << std::endl;
+    //Main structure
+        file << "public class " << c.getName() << " ";
+        if (c.isInheritance()) file << "extends " << c.getInheritance();
+        file << "{" << std::endl;
+    //Variables
+        for (int i = 0; i < c.getVariables().size(); i++) 
+            file << space << c.getVariables()[i].type << " " << c.getVariables()[i].name << ";" << std::endl;
         file << std::endl;
-        //Main structure
-        file << "public class" << c.getName();
-        if(c.isInheritance()) file << " extends " << c.getInheritance() << " {" << std::endl;
-        //Variables
-        for(int i = 0; i < c.getVariables().size(); i++){
-            Variable aux = c.getVariables()[i];
-            file << aux.type << " " << aux.name << " = " << aux.def << std::endl;
+        //file << space << c.getVariables()[i].type << " " << c.getVariables()[i].name /*<< " = " << c.getVariables()[i].def*/ << ";" << std::endl;
+    //Constructors
+    //Default
+        file << space << "public " << c.getName() << "(){" << std::endl;
+        if (c.isInheritance()) file << space << space << "super();" << std::endl;
+        for (int i = 0; i < c.getVariables().size(); i++)
+            file << space << space << "this." << c.getVariables()[i].name << " = " << c.getVariables()[i].def << ";" << std::endl;
+        file << space << "}" << std::endl;
+    //By parameters
+        //Checks if its just a class that extends other one w no new values
+        if (c.isInheritance() && c.getVariables().size() == 0) {
+
+        } else {
+            file << space << "public " << c.getName() << "(";
+            for (int i = 0; i < c.getVariables().size(); i++){
+                file << c.getVariables()[i].type << " " << c.getVariables()[i].name;
+                if (i < c.getVariables().size()-1) file << ",";
+            }
+            file << "){" << std::endl;
+            for (int i = 0; i < c.getVariables().size(); i++)
+                file << space << space << "this." << c.getVariables()[i].name << " = " << c.getVariables()[i].name << ";" << std::endl;
+            file << space << "}"  << std::endl;
         }
+    //Setters & getters
         //Setters
-        for(int i = 0; i < c.getVariables().size(); i++){
-            //file << "public void set" << 
-        }
+        for (int i = 0; i < c.getVariables().size(); i++)
+            file << space << "public void set" << fltu(c.getVariables()[i].name) << "(" << c.getVariables()[i].type << " " << c.getVariables()[i].name << "){ this." << c.getVariables()[i].name << " = " << c.getVariables()[i].name << ";" << std::endl;
         //Getters
-        //Methods
-    //Success
+        for (int i = 0; i < c.getVariables().size(); i++)
+            file << space << "public " << c.getVariables()[i].type << " get" << c.getVariables()[i].name << "(){ return this." << c.getVariables()[i].name << "; }" << std::endl;
+        
+    //Methods
+        //for (int i = 0; i < c.getMethods().size(); i++)   //idk what syntax methods will have
+
+    //Closing file
+        file << "}" << std::endl;
         file.close();
-        println("Class built succesfully");
-        return true;
-    };
+    }
+};
+
+class HelpFile : public File {
+
 };
 
 //Crear clase padre FILE y clases hijo JavaFile y helpFiles
