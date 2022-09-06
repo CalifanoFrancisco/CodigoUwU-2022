@@ -325,10 +325,10 @@ public:
     //Setters & getters
         //Setters
         for (int i = 0; i < c.getVariables().size(); i++)
-            file << space << "public void set" << fltu(c.getVariables()[i].name) << "(" << c.getVariables()[i].type << " " << c.getVariables()[i].name << "){ this." << c.getVariables()[i].name << " = " << c.getVariables()[i].name << ";" << std::endl;
+            file << space << "public void set" << fltu(c.getVariables()[i].name) << "(" << c.getVariables()[i].type << " " << c.getVariables()[i].name << "){ this." << c.getVariables()[i].name << " = " << c.getVariables()[i].name << "; }" << std::endl;
         //Getters
         for (int i = 0; i < c.getVariables().size(); i++)
-            file << space << "public " << c.getVariables()[i].type << " get" << c.getVariables()[i].name << "(){ return this." << c.getVariables()[i].name << "; }" << std::endl;
+            file << space << "public " << c.getVariables()[i].type << " get" << fltu(c.getVariables()[i].name) << "(){ return this." << c.getVariables()[i].name << "; }" << std::endl;
         
     //Methods
         //for (int i = 0; i < c.getMethods().size(); i++)   //idk what syntax methods will have
