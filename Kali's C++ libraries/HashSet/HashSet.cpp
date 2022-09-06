@@ -1,13 +1,14 @@
-#include <iostream>
 template <typename T> class HashSet {
 private:
-    T         dato;
+    T          dato;
+    size_t     hashedData;
     HashSet<T>*next;
     HashSet<T>*head = NULL;
+
     bool isHere(T e){
         HashSet<T>*current = head;
         while (current != NULL) {
-            if (current->dato == e) return true;
+            if (current->hashedData == hashed(e)) return true;
             current = current->next;
         }
         return false;
@@ -16,6 +17,11 @@ private:
         if (i < 0 || i > this->size()) return false;
         return true;
     }
+    size_t hashed(T x) {
+        hash<T> hashObject;
+        return hashObject(x);
+    }
+
 public:
     void add(T x){
         if(isHere(x)) return;
@@ -23,6 +29,7 @@ public:
         HashSet<T>*newNode = new HashSet<T>;
         newNode->dato = x;
         newNode->next = NULL;
+        newNode->hashedData = hashed(x);
 
         if(head == NULL){
             head = newNode;
@@ -50,7 +57,7 @@ public:
 
         HashSet<T>*current = head;
         for (int i = 0; current != NULL; i++){
-            if (current->dato != e[i]) return false;
+            if (current->hashedData != hashed(e[i])) return false;
             current = current->next;
         }
         return true;
@@ -60,13 +67,6 @@ public:
         int i = 0;
         for (; current != NULL; i++) current = current->next;
         return i;
-    }
-    void println(){
-        HashSet<T>*current = head;
-        for(; current!=NULL; current = current->next){
-            std::cout << current->dato << " ";
-        }
-        std::cout << std::endl;
     }
     void remove(int index){
 
