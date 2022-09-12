@@ -1,9 +1,18 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+
 using std::cout;
 using std::endl;
 using std::cin;
+
+#define DEBUG 1
+#if DEBUG
+    #define println(x) std::cout<<x<<std::endl;
+#else
+    #define println(x)
+#endif
+
 
 template <typename T> class HashSet {
 private:
@@ -106,40 +115,35 @@ public:
     virtual HashSet<Variable> getAttributes()=0;
     virtual HashSet<std::string> getImports()=0;
     virtual HashSet<std::string> getMethods()=0;
-
 };
 
 class Interface : public ClassDef {
 private:
     std::vector<Interface> inheritances;
-    bool inBounds(int index){
-        if (index < 0 || index >= this->inheritances.size()) return false;
-        return true;
-    }
 public:
-    void addImport (std::string x) {}
-    void addMethod (std::string x) {}
-    void addAttribute (Variable x) {}
+    void addImport (std::string x) {
+        this->imports.add(x);
+    }
+    void addMethod (std::string x) {
+        this->methods.add(x);
+    }
+    void addAttribute (Variable x) {
+        this->attributes.add(x);
+    }
     HashSet<Variable> getAttributes () { return this->attributes;   }
     HashSet<std::string> getImports () { return this->imports;      }
     HashSet<std::string> getMethods () { return this->methods;      }
     bool hasInheritance() {
         return (this->inheritances.size() > 0);
     }
-    /*std::string getInheritanceName(int index){
-        //if (!inBounds(index)) return "";
-        return this->inheritances[index].name;
-    }
-    std::vector<std::string> getInheritanceAttributes(int index){
-        //if (!inBounds(index)) return HashSet<std::string>;
-        return this->inheritances[index].attributes;
-    }
-    HashSet<std::string> getInheritanceMethods(int index){
-        //if (!inBounds(index)) return HashSet<std::string>;
-        return this->inheritances[index].methods;
-    }*/
     bool operator==(Interface x) {
         return (this->name == x.name);
+    }
+    void addInheritance(Interface x){
+        this->inheritances.push_back(x);
+    }
+    std::vector<Interface> getInterfaces(){
+        return this->inheritances;
     }
 };
 
@@ -148,7 +152,6 @@ private:
     Class* inheritance = NULL;          //Java supports only one class inheritance per class
     HashSet<Interface> interfaces;      //Java supports multiple interface implementations
 public:
-    Class(){}
     void addAttribute (Variable x) {
         this->attributes.add(x);
     }
@@ -167,12 +170,31 @@ public:
     HashSet<std::string> getMethods () {
         return this->methods;
     }
-    bool hasInheritance () {
-        return !(inheritance == NULL);
+
+    void setInheritance(Class*class_){
+        Class*aux = new Class;
+        aux = class_;
+        this->inheritance = aux;
     }
-    Class*getInheritance() {
-        if (!hasInheritance()) return NULL;
+    Class*getInheritance(){
         return this->inheritance;
+    }
+    bool hasInheritance(){
+        return (this->inheritance != NULL);
+    }
+
+    void addInterface(Interface x){
+        this->interfaces.add(x);
+    }
+    HashSet<Interface> getInterfaces(){
+        return this->interfaces;
+    }
+    bool hasInterface(){
+        return !(this->interfaces.size() == 0);
+    }
+
+    bool operator==(Class x){
+        return (x.name == this->name);
     }
 };
 
@@ -186,6 +208,9 @@ public:
     HashSet<Variable> getAttributes () { return this->attributes;   }
     HashSet<std::string> getImports () { return this->imports;      }
     HashSet<std::string> getMethods () { return this->methods;      }
+    bool operator==(Enum x){
+        return (this->name == x.name);
+    }
 };
 
 std::string readUntilParenthesis(std::string input){
@@ -196,6 +221,7 @@ std::string readUntilParenthesis(std::string input){
     }
     return output + ')';
 }
+
 std::string toUpperCase(std::string input){
     for (int i = 0; i < input.size(); i++) {
         if (islower(input[i])) input[i] -= 32;
@@ -203,32 +229,36 @@ std::string toUpperCase(std::string input){
     return input;
 }
 
+std::string fltu(std::string e){
+}
+
 void buildFile (Interface x) {
     //Creating file
-    std::fstream file(x.name+".txt");
+    std::ofstream file(x.name+".java");
     //Adding imports
-    for (int i = 0; i < x.getImports().size(); i++)
-        file << "import " << x.getImports()[i] << ";" << std::endl;
+    for (int i = 0; i < x.getImports().size(); i++) file << "import " << x.getImports()[i] << ";" << std::endl;
     file << std::endl;
     //Main structure
     file << "public interface " << x.name << " ";
-    //  !TODO
+    //  Inheritance
     if (x.hasInheritance()){
         file << "extends ";
-        /*for (int i = 0; i < x.getInheritances().size(); i++){
-            file << x.getInheritances()[i]
-            if (i < x.getInheritances().size()-1) file << ",";
-        }*/
+        for (int i = 0; i < x.getInterfaces().size(); i++) {
+            file << x.getInterfaces()[i].name;
+            if (i < x.getInterfaces().size()-1) file << ",";
+        }
+        file << " ";
     }
     file << "{" << std::endl;
     //Attributes
     std::string space = "    ";
-    for (int i = 0; i < x.getAttributes().size(); i++) 
+    for (int i = 0; i < x.getAttributes().size(); i++)
         file << space << x.getAttributes()[i].type << " " << x.getAttributes()[i].name << ";" << std::endl;
     file << std::endl;
     //Methods
-    for (int i = 0; i < x.getMethods().size(); i++)
+    for (int i = 0; i < x.getMethods().size(); i++){
         file << space << readUntilParenthesis(x.getMethods()[i]) << ";" << std::endl;
+    }
     file << "}" << std::endl;
     file.close();
 }
@@ -249,16 +279,13 @@ void buildFile (Enum      x) {
     file.close();
 }
 
-//WIP
-// Hacer q una clase pueda contener otra clase dentro (herencia) asi se hacen los constructores
-// default mas completos
-
-// Hacer q una interfaz pueda contener a otra interfaz dentro, permite multiple herencia
-
-
-
 int main () {
+    Interface interfaz;
+    interfaz.name = "Nombre";
+    interfaz.addMethod("public void alertar(){ System.out.println(owo); }");
+    interfaz.addMethod("public boolean isBlack(){ return true; }");
 
+    buildFile(interfaz);
     cout<<"Success!"<<endl;
     return 0;
 
