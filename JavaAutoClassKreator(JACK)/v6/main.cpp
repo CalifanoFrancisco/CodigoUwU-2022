@@ -145,8 +145,8 @@ public:
 
 class Class     : public ClassDef {
 private:
-    Class* inheritance = NULL;
-    HashSet<Interface> interfaces;
+    Class* inheritance = NULL;          //Java supports only one class inheritance per class
+    HashSet<Interface> interfaces;      //Java supports multiple interface implementations
 public:
     Class(){}
     void addAttribute (Variable x) {
@@ -179,9 +179,7 @@ public:
 class Enum      : public ClassDef {
 public:
     void addAttribute (Variable x) {
-        Variable aux;
-        aux.type = x.name;
-        this->attributes.add(aux);
+        this->attributes.add(x);
     }
     void addImport (std::string x) {}
     void addMethod (std::string x) {}
@@ -189,6 +187,21 @@ public:
     HashSet<std::string> getImports () { return this->imports;      }
     HashSet<std::string> getMethods () { return this->methods;      }
 };
+
+std::string readUntilParenthesis(std::string input){
+    std::string output;
+    for (int i = 0; i < input.size(); i++) {
+        if (input[i]==')') break;
+        output+=input[i];
+    }
+    return output + ')';
+}
+std::string toUpperCase(std::string input){
+    for (int i = 0; i < input.size(); i++) {
+        if (islower(input[i])) input[i] -= 32;
+    }
+    return input;
+}
 
 void buildFile (Interface x) {
     //Creating file
@@ -198,7 +211,8 @@ void buildFile (Interface x) {
         file << "import " << x.getImports()[i] << ";" << std::endl;
     file << std::endl;
     //Main structure
-    file << "public " << x.name << " ";
+    file << "public interface " << x.name << " ";
+    //  !TODO
     if (x.hasInheritance()){
         file << "extends ";
         /*for (int i = 0; i < x.getInheritances().size(); i++){
@@ -207,10 +221,33 @@ void buildFile (Interface x) {
         }*/
     }
     file << "{" << std::endl;
-
+    //Attributes
+    std::string space = "    ";
+    for (int i = 0; i < x.getAttributes().size(); i++) 
+        file << space << x.getAttributes()[i].type << " " << x.getAttributes()[i].name << ";" << std::endl;
+    file << std::endl;
+    //Methods
+    for (int i = 0; i < x.getMethods().size(); i++)
+        file << space << readUntilParenthesis(x.getMethods()[i]) << ";" << std::endl;
+    file << "}" << std::endl;
+    file.close();
 }
-bool buildFile (Class     x) { return true;}
-bool buildFile (Enum      x) { return true; }
+
+void buildFile (Class     x) { }
+
+void buildFile (Enum      x) {
+    std::fstream file(x.name + ".java");
+    std::string space = "   ";
+    file << "public enum " << x.name << " {" << std::endl;
+    file << space;
+    for (int i = 0; i < x.getAttributes().size(); i++) {
+        file << x.getAttributes()[i].name;
+        if (i < x.getAttributes().size()-1) file << ",";
+    }
+    file << ";" << std::endl;
+    file << "}" << std::endl;
+    file.close();
+}
 
 //WIP
 // Hacer q una clase pueda contener otra clase dentro (herencia) asi se hacen los constructores
@@ -218,9 +255,9 @@ bool buildFile (Enum      x) { return true; }
 
 // Hacer q una interfaz pueda contener a otra interfaz dentro, permite multiple herencia
 
-int main () {
 
-    Class coso;
+
+int main () {
 
     cout<<"Success!"<<endl;
     return 0;
