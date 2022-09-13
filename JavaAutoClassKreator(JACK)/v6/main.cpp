@@ -170,7 +170,7 @@ public:
     HashSet<std::string> getMethods () {
         return this->methods;
     }
-
+    
     void setInheritance(Class*class_){
         Class*aux = new Class;
         aux = class_;
@@ -229,9 +229,6 @@ std::string toUpperCase(std::string input){
     return input;
 }
 
-std::string fltu(std::string e){
-}
-
 void buildFile (Interface x) {
     //Creating file
     std::ofstream file(x.name+".java");
@@ -252,7 +249,7 @@ void buildFile (Interface x) {
     file << "{" << std::endl;
     //Attributes
     std::string space = "    ";
-    for (int i = 0; i < x.getAttributes().size(); i++)
+    for (int i = 0; i < x.getAttributes().size(); i++) 
         file << space << x.getAttributes()[i].type << " " << x.getAttributes()[i].name << ";" << std::endl;
     file << std::endl;
     //Methods
@@ -280,10 +277,12 @@ void buildFile (Enum      x) {
 }
 
 int main () {
-    Interface interfaz;
-    interfaz.name = "Nombre";
+    Interface interfaz,interfaz2;
+    interfaz.name = "Coso";
     interfaz.addMethod("public void alertar(){ System.out.println(owo); }");
-    interfaz.addMethod("public boolean isBlack(){ return true; }");
+    interfaz2.name = "Persona";
+    interfaz2.addMethod("public void hacerAlgo(){ for(int i=0;i<10;i++){ System.out.println(coso); }");
+    interfaz.addInheritance(interfaz2);
 
     buildFile(interfaz);
     cout<<"Success!"<<endl;
