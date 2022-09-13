@@ -170,7 +170,7 @@ public:
     HashSet<std::string> getMethods () {
         return this->methods;
     }
-    
+
     void setInheritance(Class*class_){
         Class*aux = new Class;
         aux = class_;
@@ -229,62 +229,121 @@ std::string toUpperCase(std::string input){
     return input;
 }
 
-void buildFile (Interface x) {
-    //Creating file
-    std::ofstream file(x.name+".java");
-    //Adding imports
-    for (int i = 0; i < x.getImports().size(); i++) file << "import " << x.getImports()[i] << ";" << std::endl;
-    file << std::endl;
-    //Main structure
-    file << "public interface " << x.name << " ";
-    //  Inheritance
-    if (x.hasInheritance()){
-        file << "extends ";
-        for (int i = 0; i < x.getInterfaces().size(); i++) {
-            file << x.getInterfaces()[i].name;
-            if (i < x.getInterfaces().size()-1) file << ",";
+class JavaFile {
+
+    void buildFile (Interface x) {
+        //Creating file
+        std::ofstream file(x.name+".java");
+        //Adding imports
+        for (int i = 0; i < x.getImports().size(); i++) file << "import " << x.getImports()[i] << ";" << std::endl;
+        file << std::endl;
+        //Main structure
+        file << "public interface " << x.name << " ";
+        //  Inheritance
+        if (x.hasInheritance()){
+            file << "extends ";
+            for (int i = 0; i < x.getInterfaces().size(); i++) {
+                file << x.getInterfaces()[i].name;
+                if (i < x.getInterfaces().size()-1) file << ",";
+            }
+            file << " ";
         }
-        file << " ";
+        file << "{" << std::endl;
+        //Attributes
+        std::string space = "    ";
+        for (int i = 0; i < x.getAttributes().size(); i++)
+            file << space << x.getAttributes()[i].type << " " << x.getAttributes()[i].name << ";" << std::endl;
+        file << std::endl;
+        //Methods
+        for (int i = 0; i < x.getMethods().size(); i++){
+            file << space << readUntilParenthesis(x.getMethods()[i]) << ";" << std::endl;
+        }
+        file << "}" << std::endl;
+        file.close();
     }
-    file << "{" << std::endl;
-    //Attributes
-    std::string space = "    ";
-    for (int i = 0; i < x.getAttributes().size(); i++) 
-        file << space << x.getAttributes()[i].type << " " << x.getAttributes()[i].name << ";" << std::endl;
-    file << std::endl;
-    //Methods
-    for (int i = 0; i < x.getMethods().size(); i++){
-        file << space << readUntilParenthesis(x.getMethods()[i]) << ";" << std::endl;
-    }
-    file << "}" << std::endl;
-    file.close();
-}
 
-void buildFile (Class     x) { }
+    void buildFile (Class     x) { }
 
-void buildFile (Enum      x) {
-    std::fstream file(x.name + ".java");
-    std::string space = "   ";
-    file << "public enum " << x.name << " {" << std::endl;
-    file << space;
-    for (int i = 0; i < x.getAttributes().size(); i++) {
-        file << x.getAttributes()[i].name;
-        if (i < x.getAttributes().size()-1) file << ",";
+    void buildFile (Enum      x) {
+        std::fstream file(x.name + ".java");
+        std::string space = "   ";
+        file << "public enum " << x.name << " {" << std::endl;
+        file << space;
+        for (int i = 0; i < x.getAttributes().size(); i++) {
+            file << x.getAttributes()[i].name;
+            if (i < x.getAttributes().size()-1) file << ",";
+        }
+        file << ";" << std::endl;
+        file << "}" << std::endl;
+        file.close();
     }
-    file << ";" << std::endl;
-    file << "}" << std::endl;
-    file.close();
-}
+
+};
+
+class HelpFile {
+private:
+    std::string name;
+    std::vector<std::string> copyFileIntoBuffer () {
+        std::fstream file(this->name);
+        std::string word = "";
+        std::vector<std::string> buffer;
+        while (file >> word) buffer.push_back(word);
+        return buffer;
+    }
+    void writeIntoBuffer (std::vector<std::string>&buffer,std::string category,std::string input) {
+        std::vector<std::string> auxBuffer;
+        for (int i = 0; i < buffer.size(); i++) {
+            auxBuffer.push_back(buffer[i]);
+            if (buffer[i] == (category)) {
+                auxBuffer.push_back(input);
+            }
+        }
+        buffer = auxBuffer;
+    }
+    void writeBufferIntoFile(std::vector<std::string>buffer) {
+        std::fstream file(this->name);
+        for (int i = 0; i < buffer.size(); i++) {
+            file << buffer[i] << std::endl;
+        }
+    }
+public:
+    HelpFile(){
+        this->name = "HelpFile.txt";
+        std::ofstream file(this->name);
+        file << "#INTERFACE"     << std::endl;
+        file << "#END_INTERFACE" << std::endl;
+        file << "#ENUM"          << std::endl;
+        file << "#END_ENUM"      << std::endl;
+        file << "#CLASS"         << std::endl;
+        file << "#END_CLASS"     << std::endl;
+        file.close();
+    }
+
+    void addIntoHelpFile (Interface x) {
+        std::fstream file(this->name);
+        std::vector<std::string> buffer = this->copyFileIntoBuffer();
+        std::string interface = "";
+        interface += x.name + "{";
+        for (int i = 0; i < x.getMethods().size(); i++) interface += x.getMethods()[i] + ";"; 
+        interface += "} #END_" + x.name;
+        writeIntoBuffer(buffer, "#INTERFACE", interface);
+        writeBufferIntoFile(buffer);
+
+    }
+    void addIntoHelpFile (Class     x) {}
+    void addIntoHelpFile (Enum      x) {}
+};
+
+//Interfaces work correctly :D
 
 int main () {
-    Interface interfaz,interfaz2;
-    interfaz.name = "Coso";
-    interfaz.addMethod("public void alertar(){ System.out.println(owo); }");
-    interfaz2.name = "Persona";
-    interfaz2.addMethod("public void hacerAlgo(){ for(int i=0;i<10;i++){ System.out.println(coso); }");
-    interfaz.addInheritance(interfaz2);
+    HelpFile coso = HelpFile();
+    Interface x;
+    x.name = "COso";
+    x.addMethod("public void coso(){ lol teo }");
+    x.addMethod("public int  getChota(){return this.Chota}");
+    coso.addIntoHelpFile(x);
 
-    buildFile(interfaz);
     cout<<"Success!"<<endl;
     return 0;
 
