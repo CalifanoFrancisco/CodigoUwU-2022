@@ -13,7 +13,7 @@ using std::ifstream;    //Read only
 #define DEBUG 1
 #if DEBUG
     #define println(x) std::cout << x << std::endl
-    #define print(x)   std::cout << x 
+    #define print(x)   std::cout << x
 #else
     #define println(x)
     #define print(x)
@@ -104,8 +104,7 @@ public:
         return (this->name == x.name);
     }
     Variable(std::string _type = "",std::string _name = "",std::string _def = "")
-    :type(_type), name(_name), def(_def)
-    {}
+    :type(_type), name(_name), def(_def){}
 
     std::string toString(){
         return this->type + " " + this->name + " = " + this->def + ";";
@@ -139,6 +138,7 @@ public:
     }
     void addMethod (std::string x) {
         this->methods.add(x);
+        println(std::string("Method \"" + x + "\" added"));
     }
     void addAttribute (Variable x) {
         this->attributes.add(x);
@@ -284,7 +284,7 @@ public:
             }
             file << " ";
         }
-        file << "{" << std::endl;
+        file << " { " << std::endl;
         //Attributes
         std::string space = "    ";
         for (int i = 0; i < x.getAttributes().size(); i++)
@@ -292,7 +292,7 @@ public:
         file << std::endl;
         //Methods
         for (int i = 0; i < x.getMethods().size(); i++){
-            file << space << readUntil(x.getMethods()[i],')') << ";" << std::endl;
+            file << space << readUntil(x.getMethods()[i],')') << "; " << std::endl;
         }
         file << "}" << std::endl;
         file.close();
@@ -314,7 +314,7 @@ public:
         }
         file << " {" << std::endl;
         //Attributes
-        for (int i = 0; i < x.getAttributes().size(); i++) 
+        for (int i = 0; i < x.getAttributes().size(); i++)
             file << space << "private " << x.getAttributes()[i].type << " " << x.getAttributes()[i].name << ";" << std::endl;
         //Builders
         //Default
@@ -323,7 +323,7 @@ public:
         for (int i = 0; i < x.getAttributes().size(); i++)
             file << space << space << "this." << x.getAttributes()[i].name << " = " << x.getAttributes()[i].def << ";" <<std::endl;
         file << space <<"}" << std::endl;
-        //Builder 
+        //Builder
         //Parameters
         file << space << "public " << x.name << " (";
         for (int i = 0; i < x.getAllAttributes().size(); i++) {
@@ -341,9 +341,12 @@ public:
         }
         for (int i = 0; i < x.getAttributes().size(); i++)
             file << space << space <<"this." << x.getAttributes()[i].name << " = " << x.getAttributes()[i].name << ";" << std::endl;
-        file << space << "}" << std::endl;
-        // !!! Methods
-        //
+        file << space << "}" << std::endl << std::endl;
+        //Class methods
+        for (int i = 0; i < x.getMethods().size(); i++)
+            file << space << x.getMethods()[i] << ";" << std::endl;
+        //Interface methods
+
         //CLose file
         file << "}" << std::endl;
         file.close();
@@ -362,6 +365,10 @@ public:
     }
 
 };
+
+HashSet<Enum> enums;
+HashSet<Class> classes;
+HashSet<Interface> interfaces;
 
 class HelpFile {
     // CLASS     $
@@ -406,7 +413,7 @@ private:
     bool exists(){
         std::fstream file(this->name);
         if(file){
-            println(std::string(this->name + " already exists."));
+            //println(std::string(this->name + " already exists."));
             file.close();
             return true;
         }
@@ -426,7 +433,7 @@ private:
         std::ofstream file(this->name);
         file.close();
     }
-    bool isAlreadyInFile(Class     x) { 
+    bool isAlreadyInFile(Class     x) {
         std::ifstream file(this->name);
         std::vector<std::string> buffer;
 
@@ -454,9 +461,9 @@ private:
             if (buffer[i][0] == '&') {
                 int c = 0;
                 for (int j = 0; j < x.name.size(); j++) {
-                    if (buffer[i][j+1] == x.name[j]) c++;
+                    if (buffer[i][j + 1] == x.name[j]) c++;
                 }
-                if (buffer[i][x.name.size()+1] == '{') c++;
+                if (buffer[i][x.name.size() + 1] == '(') c++;
                 if (c == x.name.size()+1) return true;
             }
         }
@@ -480,6 +487,19 @@ private:
         }
         return false;
     }
+    std::string readUntil(std::string buffer, char until,int strtpos) {
+        std::string out = "";
+        for (int i = strtpos; i < buffer.size(); i++) {
+            if (buffer[i] == until) break;
+            out += buffer[i];
+        }
+        return out;
+    }
+    int countChars(std::string buffer,char _char){
+        int out = 0;
+        for (int i = 0; i < buffer.size(); i++) if (buffer[i] == _char) out++;
+        return out;
+    }
 public:
     HelpFile(){
         this->name = "HelpFile.txt";
@@ -495,9 +515,9 @@ public:
     void addIntoHelpFile (Interface x) {
         if (this->isAlreadyInFile(x)) return;
         std::vector<std::string> buffer = this->copyFileIntoBuffer();
-        std::string interface = "&" + x.name + "{";
-        for (int i = 0; i < x.getMethods().size(); i++) interface += readUntilParenthesis(x.getMethods()[i]) + ";";
-        interface += "}";
+        std::string interface = "&" + x.name + "() { ";
+        for (int i = 0; i < x.getMethods().size(); i++) interface += readUntilParenthesis(x.getMethods()[i]) + "; ";
+        interface += " }";
         writeIntoBuffer(buffer, "@INTERFACE", interface);
         writeBufferIntoFile(buffer);
     }
@@ -525,21 +545,54 @@ public:
         writeIntoBuffer(buffer, "@ENUM", enum_);
         writeBufferIntoFile(buffer);
     }
+
+    void loadInterfaces(){
+        std::vector<std::string> buffer = this->copyFileIntoBuffer();
+        for (int i = 0; i < buffer.size(); i++) {
+            if (buffer[i][0] == '&') {
+                std::string info = "";
+                while (buffer[i][0] != '}') { info += buffer[i] + " "; i++; } info += '}';
+                println("Interface: " + info);
+
+                Interface auxInterface;
+                auxInterface.name = readUntil(info, '(', 1);
+                println("Name: " + auxInterface.name);
+
+                std::string method = "";
+                    
+                for (int e = auxInterface.name.size()+6; e < info.size();e++) {
+                    method = readUntil(info,';',e);
+                    e += method.size()+1;
+                    if (method == "}") break;
+                    auxInterface.addMethod(method);
+                }
+                println("aaaa");    
+                //PORQUE NO ANDA LA PUTA MADRE LO ESTOY AÑADIENDO NO ENTENDES TENES ONCE AÑOS PEDAZO DE PELOTUDO LA RECALCADA CONCHA DE TU REPUTSIMA MADRE QUE TE REMIL PARIO LA CONCHA DE LA SAN PUTA DIOS COMO ODIO C++ Y SU CREOADOR Y JAVA Y TODO LA REPUTA MADRE
+                for (int p = 0; p < auxInterface.getMethods().size(); p++) { ///// CULPA DE MACRI
+                    cout << auxInterface.getMethods()[i] << endl;
+                }
+                println("end") ;
+            }
+
+        }
+    }
 };
 
 int main () {
 
 
-    Class a,b,c,d;
-    a.name = "Coso"; b.name = "B";
+    Class a,b,c,d,E;
+    a.name = "Coso"; b.name = "B"; E.name = "E";
     c.name = "C"; d.name = "D";
     a.addAttribute(Variable("Integer","edad"  ,"0"          ));
     b.addAttribute(Variable("String" ,"nombre","\"ricardo\""));
     c.addAttribute(Variable("float"  ,"num"   ,"20"         ));
     d.addAttribute(Variable("double" ,"num2"  ,"78"         ));
+    E.addAttribute(Variable("Persona","persona","new Persona()"));
     c.setInheritance(&d);
     b.setInheritance(&c);
     a.setInheritance(&b);
+    E.setInheritance(&a);
     Interface x;
     x.name = "Coso";
     x.addMethod("public void coso(){ lol teo }");
@@ -562,12 +615,19 @@ int main () {
     file.addIntoHelpFile(e);
 
     JavaFile java;
-    /*for(int i=0;i<a.getAllAttributes().size();i++){
-        cout << a.getAllAttributes()[i].toString() << endl;
-    }*/
-    java.buildFile(a);
+    /*java.buildFile(a);
+    java.buildFile(b);
+    java.buildFile(c);
+    java.buildFile(d);
+    java.buildFile(E);*/
+    file.loadInterfaces();
 
     cout<<"Success!"<<endl;
     return 0;
 
 }
+
+/* Economia:
+//   {@} Mercados tradicionales y nose
+//   {@}
+*/
