@@ -266,7 +266,7 @@ std::string toUpperCase(std::string input){
 }
 
 class JavaFile {
-
+public:
     void buildFile (Interface x) {
         //Creating file
         std::ofstream file(x.name+".java");
@@ -298,19 +298,66 @@ class JavaFile {
         file.close();
     }
 
-    void buildFile (Class     x) { }
+    void buildFile (Class     x) {          //Faltan imports y metodos
+        std::ofstream file(x.name + ".java");
+        std::string space = "    ";
+        // !!! Imports
+        //Main structures
+        file << "public class " << x.name << " ";
+        if (x.hasInheritance()) file << "extends " << x.getInheritance()->name << " ";
+        if (x.hasInterface()){
+            file << "implements ";
+            for (int i = 0; i < x.getInterfaces().size(); i++) {
+                file << x.getInterfaces()[i].name;
+                if (i < x.getInterfaces().size()-1) file << ", ";
+            }
+        }
+        file << " {" << std::endl;
+        //Attributes
+        for (int i = 0; i < x.getAttributes().size(); i++) 
+            file << space << "private " << x.getAttributes()[i].type << " " << x.getAttributes()[i].name << ";" << std::endl;
+        //Builders
+        //Default
+        file << space << "public " << x.name << "(){" << std::endl;
+        if (x.hasInheritance()) file << space << space << "super();" << std::endl;
+        for (int i = 0; i < x.getAttributes().size(); i++)
+            file << space << space << "this." << x.getAttributes()[i].name << " = " << x.getAttributes()[i].def << ";" <<std::endl;
+        file << space <<"}" << std::endl;
+        //Builder 
+        //Parameters
+        file << space << "public " << x.name << " (";
+        for (int i = 0; i < x.getAllAttributes().size(); i++) {
+            file << x.getAllAttributes()[i].type << " " << x.getAllAttributes()[i].name;
+            if (i < x.getAllAttributes().size()-1) file << ", ";
+        }
+        file << "){" << std::endl;
+        if (x.hasInheritance()) {
+            file << space << space << "super(";
+            for (int i = x.getAttributes().size(); i < x.getAllAttributes().size(); i++) {
+                file << x.getAllAttributes()[i].name;
+                if (i < x.getAllAttributes().size()-1) file << ", ";
+            }
+            file << ");" << std::endl;
+        }
+        for (int i = 0; i < x.getAttributes().size(); i++)
+            file << space << space <<"this." << x.getAttributes()[i].name << " = " << x.getAttributes()[i].name << ";" << std::endl;
+        file << space << "}" << std::endl;
+        // !!! Methods
+        //
+        //CLose file
+        file << "}" << std::endl;
+        file.close();
+    }
 
     void buildFile (Enum      x) {
-        std::fstream file(x.name + ".java");
+        std::ofstream file(x.name + ".java");
         std::string space = "   ";
-        file << "public enum " << x.name << " {" << std::endl;
-        file << space;
+        file << "public enum " << x.name << " {" << std::endl << space;
         for (int i = 0; i < x.getAttributes().size(); i++) {
             file << x.getAttributes()[i].name;
             if (i < x.getAttributes().size()-1) file << ",";
         }
-        file << ";" << std::endl;
-        file << "}" << std::endl;
+        file << ";" << std::endl << "}" << std::endl;
         file.close();
     }
 
@@ -379,7 +426,7 @@ private:
         std::ofstream file(this->name);
         file.close();
     }
-    bool isAlreadyInFile(Class x) { 
+    bool isAlreadyInFile(Class     x) { 
         std::ifstream file(this->name);
         std::vector<std::string> buffer;
 
@@ -391,7 +438,44 @@ private:
                 for (int j = 0; j < x.name.size(); j++) {
                     if (buffer[i][j+1] == x.name[j]) c++;
                 }
-                if (c == x.name.size()) return true;
+                if (buffer[i][x.name.size()+1] == '(') c++;
+                if (c == x.name.size()+1) return true;
+            }
+        }
+        return false;
+    }
+    bool isAlreadyInFile(Interface x) {
+        std::ifstream file(this->name);
+        std::vector<std::string> buffer;
+
+        for (std::string word = ""; file >> word; ) buffer.push_back(word);
+
+        for (int i = 0; i < buffer.size(); i++){
+            if (buffer[i][0] == '&') {
+                int c = 0;
+                for (int j = 0; j < x.name.size(); j++) {
+                    if (buffer[i][j+1] == x.name[j]) c++;
+                }
+                if (buffer[i][x.name.size()+1] == '{') c++;
+                if (c == x.name.size()+1) return true;
+            }
+        }
+        return false;
+    }
+    bool isAlreadyInFile(Enum      x) {
+        std::ifstream file(this->name);
+        std::vector<std::string> buffer;
+
+        for (std::string word = ""; file >> word; ) buffer.push_back(word);
+
+        for (int i = 0; i < buffer.size(); i++){
+            if (buffer[i][0] == '%') {
+                int c = 0;
+                for (int j = 0; j < x.name.size(); j++) {
+                    if (buffer[i][j+1] == x.name[j]) c++;
+                }
+                if (buffer[i][x.name.size()+1] == '{') c++;
+                if (c == x.name.size()+1) return true;
             }
         }
         return false;
@@ -409,21 +493,18 @@ public:
     }
 
     void addIntoHelpFile (Interface x) {
-        std::fstream file(this->name);
+        if (this->isAlreadyInFile(x)) return;
         std::vector<std::string> buffer = this->copyFileIntoBuffer();
-        std::string interface = "";
-        interface += "&" + x.name + "{";
+        std::string interface = "&" + x.name + "{";
         for (int i = 0; i < x.getMethods().size(); i++) interface += readUntilParenthesis(x.getMethods()[i]) + ";";
         interface += "}";
         writeIntoBuffer(buffer, "@INTERFACE", interface);
         writeBufferIntoFile(buffer);
-
     }
     void addIntoHelpFile (Class     x) {
-        std::fstream file(this->name);
+        if (this->isAlreadyInFile(x)) return;
         std::vector<std::string> buffer = this->copyFileIntoBuffer();
-        std::string class_ = "";
-        class_ += "$" + x.name + "(";
+        std::string class_ = "$" + x.name + "(";
         for (int i = 0; i < x.getAllAttributes().size(); i++){
             class_ += x.getAllAttributes()[i].type + "-" + x.getAllAttributes()[i].name;
             if (i < x.getAllAttributes().size()-1) class_ += ",";
@@ -433,27 +514,21 @@ public:
         writeBufferIntoFile(buffer);
     }
     void addIntoHelpFile (Enum      x) {
-        //Symbol %
-    }
-    bool isInFile(Class x){
-        return this->isAlreadyInFile(x);
+        if (this->isAlreadyInFile(x)) return;
+        std::vector<std::string> buffer = this->copyFileIntoBuffer();
+        std::string enum_ = "%" + x.name + "{";
+        for (int i = 0; i < x.getAttributes().size(); i++){
+            enum_ += x.getAttributes()[i].name;
+            if (i < x.getAttributes().size()-1) enum_ += ",";
+        }
+        enum_ += "}";
+        writeIntoBuffer(buffer, "@ENUM", enum_);
+        writeBufferIntoFile(buffer);
     }
 };
 
-//Interfaces work correctly :D
-//Instead of using #TYPE #END_TYPE use a character for each type
-
 int main () {
-    /*HelpFile coso = HelpFile();
-    Interface x;
-    x.name = "COso";
-    x.addMethod("public void coso(){ lol teo }");
-    x.addMethod("public int  getChota(){return this.Chota}");
-    coso.addIntoHelpFile(x);*/
-    /*int num = 10;
-    int*ptr = &num;
-    cout << ptr  << endl;
-    cout << *ptr << endl;*/
+
 
     Class a,b,c,d;
     a.name = "Coso"; b.name = "B";
@@ -469,15 +544,28 @@ int main () {
     x.name = "Coso";
     x.addMethod("public void coso(){ lol teo }");
     x.addMethod("public int  getChota(){return this.Chota}");
+    Enum e;
+    e.name = "Color";
+    e.addAttribute(Variable("","ROJO",""));
+    e.addAttribute(Variable("","AMARILLO",""));
 
     HelpFile file = HelpFile();
 
-    //file.addIntoHelpFile(a);
-    //file.addIntoHelpFile(b);
-    //file.addIntoHelpFile(c);
-    //file.addIntoHelpFile(d);
-    //file.addIntoHelpFile(x);
-    cout << file.isInFile(a) << endl;
+    file.addIntoHelpFile(a);
+    file.addIntoHelpFile(a);
+    file.addIntoHelpFile(b);
+    file.addIntoHelpFile(c);
+    file.addIntoHelpFile(d);
+    file.addIntoHelpFile(x);
+    file.addIntoHelpFile(x);
+    file.addIntoHelpFile(e);
+    file.addIntoHelpFile(e);
+
+    JavaFile java;
+    /*for(int i=0;i<a.getAllAttributes().size();i++){
+        cout << a.getAllAttributes()[i].toString() << endl;
+    }*/
+    java.buildFile(a);
 
     cout<<"Success!"<<endl;
     return 0;
