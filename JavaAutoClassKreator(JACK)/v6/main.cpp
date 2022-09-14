@@ -6,9 +6,9 @@ using std::cout;
 using std::endl;
 using std::cin;
 using std::string;
-using std::fstream;
-using std::ofstream;
-using std::ifstream;
+using std::fstream;     //Read & write
+using std::ofstream;    //Write & build
+using std::ifstream;    //Read only
 
 #define DEBUG 1
 #if DEBUG
