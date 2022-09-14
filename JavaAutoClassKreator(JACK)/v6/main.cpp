@@ -379,31 +379,19 @@ private:
         std::ofstream file(this->name);
         file.close();
     }
-    bool isAlreadyInFile(Class x) {     //WIP 
+    bool isAlreadyInFile(Class x) { 
         std::ifstream file(this->name);
-        std::string word;
         std::vector<std::string> buffer;
-        bool out = false;
-        while (file >> word) buffer.push_back(word);
+
+        for (std::string word = ""; file >> word; ) buffer.push_back(word);
+
         for (int i = 0; i < buffer.size(); i++){
-            cout << "Is " << buffer[i][0] <<" == $ ?   ";
-            if (buffer[i][0] == '$'){
+            if (buffer[i][0] == '$') {
                 int c = 0;
-                cout<<"SI"<<endl;
-                std::string aux = buffer[i];
-                cout << "Palabra a comparar " << aux << endl;
-                for (int j = 0; j < x.name.size(); i++){ //Se queda encerrado adentro de D == A ? NO
-                    cout << "Es " << aux[j+1] << " == " << x.name[j] << " ?";
-                    if (aux[j+1] == x.name[j]){
-                        c++;
-                        cout<<"Si"<<endl;
-                    }else{
-                        cout<<"no"<<endl;
-                    }
+                for (int j = 0; j < x.name.size(); j++) {
+                    if (buffer[i][j+1] == x.name[j]) c++;
                 }
-                if (c == x.name.size()) out = true;
-            }else{
-                cout <<"no"<<endl;
+                if (c == x.name.size()) return true;
             }
         }
         return false;
@@ -468,7 +456,7 @@ int main () {
     cout << *ptr << endl;*/
 
     Class a,b,c,d;
-    a.name = "A"; b.name = "B";
+    a.name = "Coso"; b.name = "B";
     c.name = "C"; d.name = "D";
     a.addAttribute(Variable("Integer","edad"  ,"0"          ));
     b.addAttribute(Variable("String" ,"nombre","\"ricardo\""));
