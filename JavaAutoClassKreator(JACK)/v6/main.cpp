@@ -19,7 +19,11 @@ using std::ifstream;    //Read only
     #define print(x)
 #endif
 
-
+/*
+Optimizaciones
+getHashSet() ----------> return this->hashSet;
+getHashSet(int index) -> return this->hashSet[index];
+*/
 template <typename T> class HashSet {
 private:
     T         dato;
@@ -36,6 +40,9 @@ private:
         return true;
     }
 public:
+    HashSet<T>(){
+        this->head = NULL;
+    }
     void add(T x) {
         if(isHere(x)) return;
 
@@ -71,7 +78,7 @@ public:
         }
         return true;
     }
-    int  size(){
+    int size(){
         int i = 0;
         for (HashSet<T>*current = head; current != NULL; i++) current = current->next;
         return i;
@@ -103,7 +110,7 @@ public:
     bool operator== (Variable x) {
         return (this->name == x.name);
     }
-    Variable(std::string _type = "",std::string _name = "",std::string _def = "")
+    Variable(std::string _type = "",std::string _name = "",std::string _def = "empty")
     :type(_type), name(_name), def(_def){}
 
     std::string toString(){
@@ -493,7 +500,7 @@ private:
         }
         return out;
     }
-    int countChars(std::string buffer,char _char){
+    int  countChars(std::string buffer,char _char){
         int out = 0;
         for (int i = 0; i < buffer.size(); i++) if (buffer[i] == _char) out++;
         return out;
@@ -503,6 +510,11 @@ private:
             for (int j = 0; j < buffer[i].size(); j++){
                 if (buffer[i][j] == replace)  buffer[i][j] = replacement;
             }
+        }
+    }
+    void replaceCharacters(std::string             &buffer,char replace, char replacement){
+        for (int i = 0; i < buffer.size(); i++) {
+            if (buffer[i] == replace) buffer[i] = replacement;
         }
     }
 public:
@@ -551,7 +563,7 @@ public:
         writeBufferIntoFile(buffer);
     }
 
-    void loadInterfaces(HashSet<Interface> & interfaces){
+    void loadInterfaces(HashSet<Interface> & interfaces) {
         std::vector<std::string> buffer = this->copyFileIntoBuffer();
         for (int i = 0; i < buffer.size(); i++) {
             if (buffer[i][0] == '&') {
@@ -575,16 +587,28 @@ public:
 
         }
     }
-    void loadClasses(HashSet<Class> & classes){
+    void loadClasses   (HashSet<Class>     &    classes) {
         std::vector<std::string> buffer = this->copyFileIntoBuffer();
-        replaceCharacters(buffer, '-', ' ');
         for (int i = 0; i < buffer.size(); i++) {
             if (buffer[i][0] == '$') {
-                std::string buf = buffer[i];
-                println(buf);
-                for(int e = 0; e < (this->countChars(buffer[i],',') + 1); e++) {    //lo repite x la cantidad de variables  q recive
-
+                Class aux;
+                aux.name = this->readUntil(buffer[i], '(', 1);
+                if (!(buffer[i][aux.name.size() + 2] == ')')) {
+                    int extraBuf = aux.name.size() + 2;
+                    for (int e = 0; e < (this->countChars(buffer[i], ',') + 1); e++) { 
+                        Variable var; 
+                        var.type = readUntil(buffer[i], '-', extraBuf);
+                        extraBuf += var.type.size() + 1;
+                        if (e < this->countChars(buffer[i], ',')) {
+                            var.name = readUntil(buffer[i], ',', extraBuf);
+                        } else {
+                            var.name = readUntil(buffer[i], ')', extraBuf);
+                        }
+                        extraBuf += var.name.size() + 1;
+                        aux.addAttribute(var);
+                    }
                 }
+                classes.add(aux); 
             }
         }
     }
@@ -646,10 +670,10 @@ void printClasses(HashSet<Interface> interfaces){
 }
 void printClasses(HashSet<Class> classes){
  for(int i = 0; i < classes.size(); i++){
-        cout << classes[i].name << endl;
-        for(int e = 0; e < classes[i].getAttributes().size(); e++) cout << classes[i].getAttributes()[e].type << " " << classes[i].getAttributes()[e].name << " = " << classes[i].getAttributes()[e].def << ";" << endl;
-        for(int e = 0; e < classes[i].getMethods().size();    e++) cout << classes[i].getMethods()[e] << endl;
-        cout << endl;
+        cout << classes[i].name << " {" <<endl;
+        for(int e = 0; e < classes[i].getAttributes().size(); e++) cout << "    " << classes[i].getAttributes()[e].toString() << endl;
+        for(int e = 0; e < classes[i].getMethods().size();    e++) cout << "    " << classes[i].getMethods()[e] << endl;
+        cout << "}" << endl << endl;
     }
 }
 void printClasses(HashSet<Enum> enums){
@@ -660,17 +684,19 @@ void printClasses(HashSet<Enum> enums){
     }
 }
 
+
 int main () {
 
-    HashSet<Enum> enums;
-    HashSet<Class> classes;
-    HashSet<Interface> interfaces;
+    HashSet<Enum>           enums = HashSet<Enum>();
+    HashSet<Class>        classes = HashSet<Class>();
+    HashSet<Interface> interfaces = HashSet<Interface>();
 
     HelpFile file = HelpFile();
    
-    file.loadInterfaces(interfaces);
-    printClasses(interfaces);
+    //file.loadInterfaces(interfaces);
+    //printClasses(interfaces);
     file.loadClasses(classes);
+    printClasses(classes);
 
     cout<<"Success!"<<endl;
     return 0;
