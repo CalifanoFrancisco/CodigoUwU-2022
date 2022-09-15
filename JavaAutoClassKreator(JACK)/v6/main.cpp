@@ -124,21 +124,23 @@ public:
     virtual void addAttribute(Variable x) = 0;
     virtual void addImport(std::string x) = 0;
     virtual void addMethod(std::string x) = 0;
-    virtual HashSet<Variable> getAttributes()=0;
-    virtual HashSet<std::string> getImports()=0;
-    virtual HashSet<std::string> getMethods()=0;
+    virtual HashSet<Variable> getAttributes() = 0;
+    virtual HashSet<std::string> getImports() = 0;
+    virtual HashSet<std::string> getMethods() = 0;
 };
 
 class Interface : public ClassDef {
 private:
     std::vector<Interface> inheritances;
 public:
+    Interface(){
+        this->inheritances.clear();
+    }
     void addImport (std::string x) {
         this->imports.add(x);
     }
     void addMethod (std::string x) {
         this->methods.add(x);
-        println(std::string("Method \"" + x + "\" added"));
     }
     void addAttribute (Variable x) {
         this->attributes.add(x);
@@ -366,10 +368,6 @@ public:
 
 };
 
-HashSet<Enum> enums;
-HashSet<Class> classes;
-HashSet<Interface> interfaces;
-
 class HelpFile {
     // CLASS     $
     // INTERFACE &
@@ -393,7 +391,7 @@ private:
         }
         buffer = auxBuffer;
     }
-    void writeBufferIntoFile(std::vector<std::string>buffer) {
+    void writeBufferIntoFile(std::vector<std::string> buffer) {
         std::fstream file(this->name);
         for (int i = 0; i < buffer.size(); i++) {
             file << buffer[i] << std::endl;
@@ -500,6 +498,13 @@ private:
         for (int i = 0; i < buffer.size(); i++) if (buffer[i] == _char) out++;
         return out;
     }
+    void replaceCharacters(std::vector<std::string>&buffer,char replace, char replacement){
+        for (int i = 0; i < buffer.size(); i++) {
+            for (int j = 0; j < buffer[i].size(); j++){
+                if (buffer[i][j] == replace)  buffer[i][j] = replacement;
+            }
+        }
+    }
 public:
     HelpFile(){
         this->name = "HelpFile.txt";
@@ -546,41 +551,46 @@ public:
         writeBufferIntoFile(buffer);
     }
 
-    void loadInterfaces(){
+    void loadInterfaces(HashSet<Interface> & interfaces){
         std::vector<std::string> buffer = this->copyFileIntoBuffer();
         for (int i = 0; i < buffer.size(); i++) {
             if (buffer[i][0] == '&') {
-                std::string info = "";
-                while (buffer[i][0] != '}') { info += buffer[i] + " "; i++; } info += '}';
-                println("Interface: " + info);
-
-                Interface auxInterface;
+                std::string info = "", method = "";
+                while (buffer[i][0] != '}') 
+                { info += buffer[i] + " "; i++; } 
+                info += '}';
+                //println("Interface: " + info);
+                Interface auxInterface = Interface();
                 auxInterface.name = readUntil(info, '(', 1);
-                println("Name: " + auxInterface.name);
 
-                std::string method = "";
-                    
                 for (int e = auxInterface.name.size()+6; e < info.size();e++) {
                     method = readUntil(info,';',e);
                     e += method.size()+1;
                     if (method == "}") break;
                     auxInterface.addMethod(method);
                 }
-                println("aaaa");    
-                //PORQUE NO ANDA LA PUTA MADRE LO ESTOY AÑADIENDO NO ENTENDES TENES ONCE AÑOS PEDAZO DE PELOTUDO LA RECALCADA CONCHA DE TU REPUTSIMA MADRE QUE TE REMIL PARIO LA CONCHA DE LA SAN PUTA DIOS COMO ODIO C++ Y SU CREOADOR Y JAVA Y TODO LA REPUTA MADRE
-                for (int p = 0; p < auxInterface.getMethods().size(); p++) { ///// CULPA DE MACRI
-                    cout << auxInterface.getMethods()[i] << endl;
-                }
-                println("end") ;
+                interfaces.add(auxInterface);
+
             }
 
         }
     }
+    void loadClasses(HashSet<Class> & classes){
+        std::vector<std::string> buffer = this->copyFileIntoBuffer();
+        replaceCharacters(buffer, '-', ' ');
+        for (int i = 0; i < buffer.size(); i++) {
+            if (buffer[i][0] == '$') {
+                std::string buf = buffer[i];
+                println(buf);
+                for(int e = 0; e < (this->countChars(buffer[i],',') + 1); e++) {    //lo repite x la cantidad de variables  q recive
+
+                }
+            }
+        }
+    }
 };
 
-int main () {
-
-
+void testInit(){
     Class a,b,c,d,E;
     a.name = "Coso"; b.name = "B"; E.name = "E";
     c.name = "C"; d.name = "D";
@@ -593,10 +603,14 @@ int main () {
     b.setInheritance(&c);
     a.setInheritance(&b);
     E.setInheritance(&a);
-    Interface x;
+    Interface x,y;
     x.name = "Coso";
     x.addMethod("public void coso(){ lol teo }");
     x.addMethod("public int  getChota(){return this.Chota}");
+    y.name = "Leible";
+    y.addMethod("public void leer()");
+    y.addMethod("private boolean sexo()");
+    y.addMethod("public HashMap<Integer,Float> matematicaasHijo()");
     Enum e;
     e.name = "Color";
     e.addAttribute(Variable("","ROJO",""));
@@ -613,6 +627,7 @@ int main () {
     file.addIntoHelpFile(x);
     file.addIntoHelpFile(e);
     file.addIntoHelpFile(e);
+    file.addIntoHelpFile(y);
 
     JavaFile java;
     /*java.buildFile(a);
@@ -620,7 +635,42 @@ int main () {
     java.buildFile(c);
     java.buildFile(d);
     java.buildFile(E);*/
-    file.loadInterfaces();
+}
+
+void printClasses(HashSet<Interface> interfaces){
+    for(int i = 0; i < interfaces.size(); i++){
+        cout << interfaces[i].name << endl;
+        for(int e =0; e < interfaces[i].getMethods().size();e++) cout << interfaces[i].getMethods()[e] << endl;
+        cout << endl;
+    }
+}
+void printClasses(HashSet<Class> classes){
+ for(int i = 0; i < classes.size(); i++){
+        cout << classes[i].name << endl;
+        for(int e = 0; e < classes[i].getAttributes().size(); e++) cout << classes[i].getAttributes()[e].type << " " << classes[i].getAttributes()[e].name << " = " << classes[i].getAttributes()[e].def << ";" << endl;
+        for(int e = 0; e < classes[i].getMethods().size();    e++) cout << classes[i].getMethods()[e] << endl;
+        cout << endl;
+    }
+}
+void printClasses(HashSet<Enum> enums){
+    for(int i = 0; i < enums.size(); i++){
+        cout << enums[i].name << endl;
+        for(int e =0; e < enums[i].getAttributes().size();e++) cout << enums[i].getAttributes()[e].name << endl;
+        cout << endl;
+    }
+}
+
+int main () {
+
+    HashSet<Enum> enums;
+    HashSet<Class> classes;
+    HashSet<Interface> interfaces;
+
+    HelpFile file = HelpFile();
+   
+    file.loadInterfaces(interfaces);
+    printClasses(interfaces);
+    file.loadClasses(classes);
 
     cout<<"Success!"<<endl;
     return 0;
