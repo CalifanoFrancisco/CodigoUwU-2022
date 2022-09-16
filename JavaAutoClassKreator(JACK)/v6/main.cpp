@@ -367,7 +367,7 @@ public:
         file << "public enum " << x.name << " {" << std::endl << space;
         for (int i = 0; i < x.getAttributes().size(); i++) {
             file << x.getAttributes()[i].name;
-            if (i < x.getAttributes().size()-1) file << ",";
+            if (i < x.getAttributes().size() - 1) file << ",";
         }
         file << ";" << std::endl << "}" << std::endl;
         file.close();
@@ -612,6 +612,35 @@ public:
             }
         }
     }
+    void loadEnums     (HashSet<Enum>      &      enums) {
+        std::vector<std::string> buffer = this->copyFileIntoBuffer();
+        for (int i = 0; i < buffer.size(); i++) {
+            if (buffer[i][0] == '%') {
+                Enum aux;
+                aux.name = this->readUntil(buffer[i], '{', 1);
+                if (!((buffer[i][aux.name.size() + 2]) == '}')) {
+                    int strtPos = aux.name.size() + 2;
+                    for (int j = 0; j < (this->countChars(buffer[i], ',') + 1); j++) {
+                        Variable var;
+                        if (j < (this->countChars(buffer[i], ','))){
+                            var.name = this->readUntil(buffer[i], ',', strtPos);
+                        } else {
+                            var.name = this->readUntil(buffer[i], '}', strtPos);
+                        }
+                        strtPos += var.name.size() + 1;
+                        aux.addAttribute(var);
+                    }
+                }
+                enums.add(aux);
+            }
+        }
+    }
+
+    void loadAll(HashSet<Interface>&interfaces,HashSet<Class>&classes,HashSet<Enum>&enums){
+        loadInterfaces(interfaces);
+        loadClasses(classes);
+        loadEnums(enums);
+    }
 };
 
 void testInit(){
@@ -661,26 +690,29 @@ void testInit(){
     java.buildFile(E);*/
 }
 
-void printClasses(HashSet<Interface> interfaces){
+void printClasses(HashSet<Interface> interfaces) {
+    cout << "Interfaces: " << endl;
     for(int i = 0; i < interfaces.size(); i++){
-        cout << interfaces[i].name << endl;
-        for(int e =0; e < interfaces[i].getMethods().size();e++) cout << interfaces[i].getMethods()[e] << endl;
-        cout << endl;
+        cout << interfaces[i].name << " {" << endl;
+        for(int e =0; e < interfaces[i].getMethods().size();e++) cout << "    "<<interfaces[i].getMethods()[e] << endl;
+        cout << "}" << endl << endl;
     }
 }
-void printClasses(HashSet<Class> classes){
- for(int i = 0; i < classes.size(); i++){
+void printClasses(HashSet<Class>        classes) {
+    cout << "Classes: " << endl;
+    for(int i = 0; i < classes.size(); i++){
         cout << classes[i].name << " {" <<endl;
         for(int e = 0; e < classes[i].getAttributes().size(); e++) cout << "    " << classes[i].getAttributes()[e].toString() << endl;
         for(int e = 0; e < classes[i].getMethods().size();    e++) cout << "    " << classes[i].getMethods()[e] << endl;
         cout << "}" << endl << endl;
     }
 }
-void printClasses(HashSet<Enum> enums){
+void printClasses(HashSet<Enum>           enums) {
+    cout << "Enums: " << endl;
     for(int i = 0; i < enums.size(); i++){
-        cout << enums[i].name << endl;
-        for(int e =0; e < enums[i].getAttributes().size();e++) cout << enums[i].getAttributes()[e].name << endl;
-        cout << endl;
+        cout << enums[i].name << " {" <<endl;
+        for(int e =0; e < enums[i].getAttributes().size();e++) cout << "    " <<enums[i].getAttributes()[e].name << endl;
+        cout << "}" << endl << endl;
     }
 }
 
@@ -692,12 +724,11 @@ int main () {
     HashSet<Interface> interfaces = HashSet<Interface>();
 
     HelpFile file = HelpFile();
-   
-    //file.loadInterfaces(interfaces);
-    //printClasses(interfaces);
-    file.loadClasses(classes);
-    printClasses(classes);
 
+    file.loadAll(interfaces,classes,enums);
+    printClasses(interfaces);
+    printClasses(classes);
+    printClasses(enums);
     cout<<"Success!"<<endl;
     return 0;
 
