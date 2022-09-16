@@ -6,6 +6,7 @@ using std::cout;
 using std::endl;
 using std::cin;
 using std::string;
+using std::vector;
 using std::fstream;     //Read & write
 using std::ofstream;    //Write & build
 using std::ifstream;    //Read only
