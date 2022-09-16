@@ -25,6 +25,7 @@ Optimizaciones
 getHashSet() ----------> return this->hashSet;
 getHashSet(int index) -> return this->hashSet[index];
 */
+
 template <typename T> class HashSet {
 private:
     T         dato;
@@ -564,13 +565,34 @@ public:
         writeBufferIntoFile(buffer);
     }
 
-    void loadInterfaces(HashSet<Interface> & interfaces) {
+    void load(HashSet<Interface>&interfaces,HashSet<Class>&classes,HashSet<Enum>&enums){
         std::vector<std::string> buffer = this->copyFileIntoBuffer();
+
         for (int i = 0; i < buffer.size(); i++) {
+            if (buffer[i][0] == '$') {
+                Class aux;
+                aux.name = this->readUntil(buffer[i], '(', 1);
+                if (!(buffer[i][aux.name.size() + 2] == ')')) {
+                    int extraBuf = aux.name.size() + 2;
+                    for (int e = 0; e < (this->countChars(buffer[i], ',') + 1); e++) {
+                        Variable var;
+                        var.type = readUntil(buffer[i], '-', extraBuf);
+                        extraBuf += var.type.size() + 1;
+                        if (e < this->countChars(buffer[i], ',')) {
+                            var.name = readUntil(buffer[i], ',', extraBuf);
+                        } else {
+                            var.name = readUntil(buffer[i], ')', extraBuf);
+                        }
+                        extraBuf += var.name.size() + 1;
+                        aux.addAttribute(var);
+                    }
+                }
+                classes.add(aux);
+            }
             if (buffer[i][0] == '&') {
                 std::string info = "", method = "";
-                while (buffer[i][0] != '}') 
-                { info += buffer[i] + " "; i++; } 
+                while (buffer[i][0] != '}')
+                { info += buffer[i] + " "; i++; }
                 info += '}';
                 //println("Interface: " + info);
                 Interface auxInterface = Interface();
@@ -583,39 +605,7 @@ public:
                     auxInterface.addMethod(method);
                 }
                 interfaces.add(auxInterface);
-
             }
-
-        }
-    }
-    void loadClasses   (HashSet<Class>     &    classes) {
-        std::vector<std::string> buffer = this->copyFileIntoBuffer();
-        for (int i = 0; i < buffer.size(); i++) {
-            if (buffer[i][0] == '$') {
-                Class aux;
-                aux.name = this->readUntil(buffer[i], '(', 1);
-                if (!(buffer[i][aux.name.size() + 2] == ')')) {
-                    int extraBuf = aux.name.size() + 2;
-                    for (int e = 0; e < (this->countChars(buffer[i], ',') + 1); e++) { 
-                        Variable var; 
-                        var.type = readUntil(buffer[i], '-', extraBuf);
-                        extraBuf += var.type.size() + 1;
-                        if (e < this->countChars(buffer[i], ',')) {
-                            var.name = readUntil(buffer[i], ',', extraBuf);
-                        } else {
-                            var.name = readUntil(buffer[i], ')', extraBuf);
-                        }
-                        extraBuf += var.name.size() + 1;
-                        aux.addAttribute(var);
-                    }
-                }
-                classes.add(aux); 
-            }
-        }
-    }
-    void loadEnums     (HashSet<Enum>      &      enums) {
-        std::vector<std::string> buffer = this->copyFileIntoBuffer();
-        for (int i = 0; i < buffer.size(); i++) {
             if (buffer[i][0] == '%') {
                 Enum aux;
                 aux.name = this->readUntil(buffer[i], '{', 1);
@@ -635,12 +625,6 @@ public:
                 enums.add(aux);
             }
         }
-    }
-
-    void loadAll(HashSet<Interface>&interfaces,HashSet<Class>&classes,HashSet<Enum>&enums){
-        loadInterfaces(interfaces);
-        loadClasses(classes);
-        loadEnums(enums);
     }
 };
 
@@ -694,8 +678,16 @@ void testInit(){
 void printClasses(HashSet<Interface> interfaces) {
     cout << "Interfaces: " << endl;
     for(int i = 0; i < interfaces.size(); i++){
-        cout << interfaces[i].name << " {" << endl;
-        for(int e =0; e < interfaces[i].getMethods().size();e++) cout << "    "<<interfaces[i].getMethods()[e] << endl;
+        cout << interfaces[i].name << " ";
+        if (interfaces[i].hasInheritance()) {
+            cout << "extends ";
+            for (int e = 0; e < interfaces[i].getInterfaces().size(); e++) {
+                cout << interfaces[i].getInterfaces()[e].name;
+                if (e < interfaces[i].getInterfaces().size()-1) cout << ", ";
+            }
+        }
+        cout << " {" << endl;
+        for(int e = 0; e < interfaces[i].getMethods().size();e++) cout << "    "<<interfaces[i].getMethods()[e] << endl;
         cout << "}" << endl << endl;
     }
 }
@@ -717,19 +709,114 @@ void printClasses(HashSet<Enum>           enums) {
     }
 }
 
+template <typename T> T input() {
+    T out;
+    std::cin >> out;
+    return out;
+}
+
+Interface buildInterface (HashSet<Interface> interfaces) {
+    Interface newInterface;
+    std::cout << "Interface name: ";
+    newInterface.name = input<std::string>();
+    while (true) {
+        std::cout << "> ";
+        std::string command = input<std::string>();
+        if (command ==           "help") { 
+            std::cout << "help          " << std::endl;
+            std::cout << "exit          " << std::endl;
+            std::cout << "addInheritance" << std::endl;
+            std::cout << "addMethod     " << std::endl;
+            std::cout << "name          " << std::endl;
+        }
+        if (command ==           "exit") { 
+            break; 
+        }
+        if (command == "addInheritance") {
+            std::cout << "Available interfaces // type END to quit" << std::endl;
+            printClasses(interfaces);
+            bool isInFile = false, inheritanceLoop = true;
+            while (inheritanceLoop) {
+                std::string inheritance = input<std::string>();
+                if (inheritance == "END") inheritanceLoop = false;
+                for (int i = 0; i < interfaces.size(); i++) {
+                    if (inheritance == interfaces[i].name) {
+                        newInterface.addInheritance(interfaces[i]);
+                        isInFile = true;
+                        inheritanceLoop = false;
+                        std::cout << "Inherited " << interfaces[i].name << " successfully" << std::endl;
+                    }
+                }
+                if (!isInFile) std::cout << "Interface " << inheritance << " does not exist" << std::endl;
+            }
+        }
+        if (command ==      "addMethod") {
+            std::cout << "Write your method, to end it write \"END\"." << std::endl;
+            std::string method = "";
+            while (true) {
+                std::string inp = input<std::string>();
+                if (inp == "END") break;
+                method += inp + " ";
+            }
+            std::cout << "Your method is: " << method << endl;
+            newInterface.addMethod(method);
+        }
+        if (command ==           "name") {
+            newInterface.name = input<std::string>();
+        }
+    }
+    return newInterface;
+    
+}
+Class     buildClass     (HashSet<Class>        classes) {
+    Class newClass;
+    std::cout << "Class name: ";
+    newClass.name = input<std::string>();
+    while (true) {
+        std::cout << "> ";
+        std::string command = input<std::string>();
+        if (command == "setInheritance") {}
+        if (command ==      "addMethod") {}
+        if (command ==   "addAttribute") {}
+        if (command ==           "name") {}
+        if (command == "addInheritance") {}
+        if (command ==           "help") {}
+    }
+}
 
 int main () {
-
     HashSet<Enum>           enums = HashSet<Enum>();
     HashSet<Class>        classes = HashSet<Class>();
     HashSet<Interface> interfaces = HashSet<Interface>();
 
-    HelpFile file = HelpFile();
+    testInit();
 
-    file.loadAll(interfaces,classes,enums);
-    printClasses(interfaces);
-    printClasses(classes);
-    printClasses(enums);
+    HelpFile file = HelpFile();
+    file.load(interfaces,classes,enums);
+
+    for ( ; ; ) {
+    std::cout << "1. Create new class"      << std::endl;
+    std::cout << "2. Create new interface"  << std::endl;
+    std::cout << "3. Create new enum"       << std::endl;
+    switch (input<int>()) {
+    case 1:
+        break;
+    case 2:
+        interfaces.add(buildInterface(interfaces));
+        printClasses(interfaces);
+        break;
+    case 4:
+        return 0;
+        break;
+    default:
+        return 0;
+        break;
+    }}
+
+    //printClasses(interfaces);
+    //printClasses(classes);
+    //printClasses(enums);
+
     cout<<"Success!"<<endl;
     return 0;
 
