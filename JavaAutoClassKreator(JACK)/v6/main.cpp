@@ -112,8 +112,9 @@ public:
     bool operator== (Variable x) {
         return (this->name == x.name);
     }
-    Variable(std::string _type = "",std::string _name = "",std::string _def = "empty")
-    :type(_type), name(_name), def(_def){}
+    Variable(std::string _type = "",std::string _name = "",std::string _def = "empty"):type(_type), name(_name), def(_def) {
+
+    }
 
     std::string toString(){
         return this->type + " " + this->name + " = " + this->def + ";";
@@ -198,6 +199,11 @@ public:
     void setInheritance(Class*class_){
         Class*aux = new Class;
         aux = class_;
+        this->inheritance = aux;
+    }
+    void setInheritance(Class class_){
+        Class*aux = new Class;
+        aux = &class_;
         this->inheritance = aux;
     }
     Class*getInheritance(){
@@ -637,7 +643,8 @@ void testInit(){
     c.addAttribute(Variable("float"  ,"num"   ,"20"         ));
     d.addAttribute(Variable("double" ,"num2"  ,"78"         ));
     E.addAttribute(Variable("Persona","persona","new Persona()"));
-    c.setInheritance(&d);
+    //c.setInheritance(&d);
+    c.setInheritance(d);
     b.setInheritance(&c);
     a.setInheritance(&b);
     E.setInheritance(&a);
@@ -768,20 +775,74 @@ Interface buildInterface (HashSet<Interface> interfaces) {
     return newInterface;
     
 }
-Class     buildClass     (HashSet<Class>        classes) {
+Class     buildClass     (HashSet<Class>        classes,HashSet<Enum> enums) {
     Class newClass;
     std::cout << "Class name: ";
     newClass.name = input<std::string>();
     while (true) {
         std::cout << "> ";
         std::string command = input<std::string>();
-        if (command == "setInheritance") {}
-        if (command ==      "addMethod") {}
-        if (command ==   "addAttribute") {}
-        if (command ==           "name") {}
-        if (command == "addInheritance") {}
-        if (command ==           "help") {}
+        if (command == "setInheritance") {
+            
+        }
+        if (command ==      "addMethod") {
+
+        }
+        if (command ==   "addAttribute") {
+            Variable aux = Variable();
+            std::cout << "Type: " << std::endl;
+            aux.type = input<std::string>();
+            std::cout << "Name: " << std::endl;
+            aux.name = input<std::string>();
+            if (aux.type == "int" || aux.type == "Integer") {
+                aux.type == "Integer";
+                std::cout << "Default value: " << std::endl;
+                aux.def = std::to_string(input<int>());
+            } else if (aux.type == "bool" || aux.type == "boolean") {
+                aux.type = "boolean";
+                std::cout << "Default value 0/1: " << std::endl;
+                aux.def = std::to_string(input<int>());
+            } else if (aux.type == "String" || aux.type == "string") {
+                aux.type = "String";
+                std::cout << "Default value: " << std::endl;
+                aux.def =std::string("\"" + input<std::string>() + "\"");
+            } else if ( aux.type == "float"  || aux.type == "Float")  {
+                aux.type = "Float";
+                std::cout << "Default value: " << std::endl;
+                aux.def = std::to_string(input<int>());
+            } else if (aux.type == "double") {
+                std::cout << "Default value: " << std::endl;
+                aux.def = std::to_string(input<int>());
+            } else {
+                bool isEnum = false;
+                for (int i = 0; i < enums.size(); i++) {
+                    if (enums[i].name == aux.type) {
+                        aux.def = enums[i].getAttributes()[0].name;
+                        isEnum = true;
+                    }
+                }
+                if (!isEnum) aux.def = std::string("new " + aux.type + "()");
+            }
+            newClass.addAttribute(aux);
+        }
+        if (command ==           "name") {
+            newClass.name = input<std::string>();
+        }
+        if (command == "addInheritance") {
+
+        }
+        if (command ==           "help") {
+            std::cout << "help          " << std::endl;
+            std::cout << "exit          " << std::endl;
+            std::cout << "addInheritance" << std::endl;
+            std::cout << "addMethod     " << std::endl;
+            std::cout << "name          " << std::endl;
+        }
+        if (command ==           "exit") {
+            break;
+        }
     }
+    return newClass;
 }
 
 int main () {
@@ -800,6 +861,8 @@ int main () {
     std::cout << "3. Create new enum"       << std::endl;
     switch (input<int>()) {
     case 1:
+        classes.add(buildClass(classes,enums));
+        printClasses(classes);
         break;
     case 2:
         interfaces.add(buildInterface(interfaces));
