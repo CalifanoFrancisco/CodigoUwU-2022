@@ -196,11 +196,11 @@ public:
         return this->methods;
     }
 
-    void setInheritance(Class*class_){
+    /*void setInheritance(Class*class_){
         Class*aux = new Class;
         aux = class_;
         this->inheritance = aux;
-    }
+    }*/
     void setInheritance(Class class_){
         Class*aux = new Class;
         aux = &class_;
@@ -645,9 +645,9 @@ void testInit(){
     E.addAttribute(Variable("Persona","persona","new Persona()"));
     //c.setInheritance(&d);
     c.setInheritance(d);
-    b.setInheritance(&c);
-    a.setInheritance(&b);
-    E.setInheritance(&a);
+    b.setInheritance(c);
+    a.setInheritance(b);
+    E.setInheritance(a);
     Interface x,y;
     x.name = "Coso";
     x.addMethod("public void coso(){ lol teo }");
@@ -775,18 +775,37 @@ Interface buildInterface (HashSet<Interface> interfaces) {
     return newInterface;
     
 }
-Class     buildClass     (HashSet<Class>        classes,HashSet<Enum> enums) {
+Class     buildClass     (HashSet<Class>        classes, HashSet<Enum> enums, HashSet<Interface> interfaces) {
     Class newClass;
     std::cout << "Class name: ";
     newClass.name = input<std::string>();
     while (true) {
         std::cout << "> ";
         std::string command = input<std::string>();
+
         if (command == "setInheritance") {
-            
+            std::cout << "Inheritance name: ";
+            std::string name = input<std::string>();
+            bool exists = false;
+            for (int i = 0; i < classes.size(); i++) {
+                if (name == classes[i].name) {
+                    newClass.setInheritance(classes[i]);
+                    exists = true;
+                }
+            }
+            if (!exists) std::cout << "The \"" << name << "\" class doesnt exist :/" << std::endl;
+          
         }
         if (command ==      "addMethod") {
-
+            std::cout << "Write your method, to end it write \"END\"." << std::endl;
+            std::string method = "";
+            while (true) {
+                std::string inp = input<std::string>();
+                if (inp == "END") break;
+                method += inp + " ";
+            }
+            std::cout << "Your method is: " << method << endl;
+            newClass.addMethod(method);
         }
         if (command ==   "addAttribute") {
             Variable aux = Variable();
@@ -828,18 +847,30 @@ Class     buildClass     (HashSet<Class>        classes,HashSet<Enum> enums) {
         if (command ==           "name") {
             newClass.name = input<std::string>();
         }
-        if (command == "addInheritance") {
-
-        }
         if (command ==           "help") {
             std::cout << "help          " << std::endl;
             std::cout << "exit          " << std::endl;
-            std::cout << "addInheritance" << std::endl;
+            std::cout << "addAttribute  " << std::endl;
+            std::cout << "setInheritance" << std::endl;
             std::cout << "addMethod     " << std::endl;
+            std::cout << "addInterface  " << std::endl;
             std::cout << "name          " << std::endl;
+            std::cout << "exit          " << std::endl;
         }
         if (command ==           "exit") {
             break;
+        }
+        if (command ==   "addInterface") {
+            std::cout << "Interface name: ";
+            std::string name = input<std::string>();
+            bool exists = false;
+            for (int i = 0; i < interfaces.size(); i++) {
+                if (name == interfaces[i].name) {
+                    newClass.addInterface(interfaces[i]);
+                    exists = true;
+                }
+            }
+            if (!exists) std::cout << "The \"" << name << "\" interface doesnt exist :/" << std::endl;
         }
     }
     return newClass;
@@ -861,12 +892,14 @@ int main () {
     std::cout << "3. Create new enum"       << std::endl;
     switch (input<int>()) {
     case 1:
-        classes.add(buildClass(classes,enums));
+        classes.add(buildClass(classes, enums, interfaces));
         printClasses(classes);
         break;
     case 2:
         interfaces.add(buildInterface(interfaces));
         printClasses(interfaces);
+        break;
+    case 3:
         break;
     case 4:
         return 0;
